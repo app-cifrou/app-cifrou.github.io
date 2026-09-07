@@ -298,19 +298,25 @@
     body.theme-red .dark-mode .chord { color: #f87171 !important; font-weight: bold !important;}
   }
 
+  /* MODAIS CLAROS E ESCUROS ATUALIZADOS */
   .custom-alert-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999999; 
       display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
   }
   .custom-alert-overlay.show { opacity: 1; pointer-events: auto; }
   .custom-alert-box {
-      background: #1e1e1e; color: #f3f4f6; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+      /* MODO CLARO PADRÃO */
+      background: #ffffff; color: #1e293b; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
       width: 85%; max-width: 450px; transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 20px; font-family: system-ui, sans-serif;
   }
+  /* MODO ESCURO */
+  .dark-mode .custom-alert-box { background: #1e1e1e; color: #f3f4f6; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  
   .custom-alert-overlay.show .custom-alert-box { transform: scale(1); }
   .custom-alert-content { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; line-height: 1.4; }
   .custom-alert-btn, .custom-btn-cancel, .custom-btn-ok { background: transparent; border: none; font-size: 15px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
-  .custom-alert-btn { align-self: flex-end; color: #60a5fa; padding: 5px 10px; }
+  .custom-alert-btn { align-self: flex-end; color: #0284c7; padding: 5px 10px; }
+  .dark-mode .custom-alert-btn { color: #38bdf8; }
   .custom-confirm-btns { display: flex; gap: 15px; justify-content: flex-end; width: 100%; margin-top: 5px; }
   .custom-btn-cancel { color: #94a3b8; }
   .custom-btn-ok { color: #ef4444; }
@@ -459,39 +465,63 @@
 
 <script>
   /* ==========================================
-     DICIONÁRIO OFFLINE DE ACORDES (NÍVEL OURO)
+     DICIONÁRIO OFFLINE DE ACORDES (NÍVEL OURO) COM MÚLTIPLOS SHAPES E NAVEGAÇÃO
      ========================================== */
   const chordsDB = {
-      'A': 'x02220', 'A#': 'x13331', 'Bb': 'x13331', 'B': 'x24442', 'C': 'x32010', 'C#': 'x46664', 'Db': 'x46664', 'D': 'xx0232', 'D#': 'xx1343', 'Eb': 'xx1343', 'E': '022100', 'F': '133211', 'F#': '244322', 'Gb': '244322', 'G': '320003', 'G#': '466544', 'Ab': '466544',
-      'Am': 'x02210', 'A#m': 'x13321', 'Bbm': 'x13321', 'Bm': 'x24432', 'Cm': 'x35543', 'C#m': 'x46654', 'Dbm': 'x46654', 'Dm': 'xx0231', 'D#m': 'xx1342', 'Ebm': 'xx1342', 'Em': '022000', 'Fm': '133111', 'F#m': '244222', 'Gbm': '244222', 'Gm': '355333', 'G#m': '466444', 'Abm': '466444',
-      'A7': 'x02020', 'B7': 'x21202', 'C7': 'x32310', 'D7': 'xx0212', 'E7': '020100', 'F7': '131211', 'G7': '320001',
-      'Am7': 'x02010', 'Bm7': 'x24232', 'Cm7': 'x35343', 'Dm7': 'xx0211', 'Em7': '022030', 'Fm7': '131111', 'Gm7': '353333',
-      'C9': 'x3233x', 'D9': 'x5455x', 'A9': 'x02200', 'G9': '3x0203', 'E9': '022102',
-      'Cmaj7': 'x32000', 'Fmaj7': '1x2210', 'Gmaj7': '320002', 'Dmaj7': 'xx0222', 'Amaj7': 'x02120'
+      'A': ['x02220', '577655'], 'A#': ['x13331', '688766'], 'Bb': ['x13331', '688766'], 'B': ['x24442', '799877'], 'C': ['x32010', 'x35553', '81010988'], 'C#': ['x46664', '911111099'], 'Db': ['x46664', '911111099'], 'D': ['xx0232', 'x57775'], 'D#': ['xx1343', 'x68886'], 'Eb': ['xx1343', 'x68886'], 'E': ['022100', 'x79997'], 'F': ['133211', 'x81010108', 'xx3211'], 'F#': ['244322', 'x91111119'], 'Gb': ['244322', 'x91111119'], 'G': ['320003', '355433', '320033'], 'G#': ['466544', 'x1113131311'], 'Ab': ['466544', 'x1113131311'],
+      'Am': ['x02210', '577555'], 'A#m': ['x13321', '688666'], 'Bbm': ['x13321', '688666'], 'Bm': ['x24432', '799777'], 'Cm': ['x35543', '81010888'], 'C#m': ['x46654', '91111999'], 'Dbm': ['x46654', '91111999'], 'Dm': ['xx0231', 'x57765'], 'D#m': ['xx1342', 'x68876'], 'Ebm': ['xx1342', 'x68876'], 'Em': ['022000', 'x79987'], 'Fm': ['133111', 'x8101098'], 'F#m': ['244222', 'x91111109'], 'Gbm': ['244222', 'x91111109'], 'Gm': ['355333', 'x1012121110'], 'G#m': ['466444', 'x1113131211'], 'Abm': ['466444', 'x1113131211'],
+      'A7': ['x02020', '575655'], 'B7': ['x21202', '797877'], 'C7': ['x32310', '8108988'], 'D7': ['xx0212', 'x57575'], 'E7': ['020100', '022130'], 'F7': ['131211', '131241'], 'G7': ['320001', '353433'],
+      'Am7': ['x02010', '575555'], 'Bm7': ['x24232', '797777'], 'Cm7': ['x35343', '8108888'], 'Dm7': ['xx0211', 'x57565'], 'Em7': ['022030', '022000'], 'Fm7': ['131111', '131141'], 'Gm7': ['353333', '353363'],
+      'C9': ['x3233x', 'x32333'], 'D9': ['x5455x', 'x54555'], 'A9': ['x02200', 'x02420'], 'G9': ['3x0203', '300003'], 'E9': ['022102', '020102'],
+      'Cmaj7': ['x32000', 'x35453'], 'Fmaj7': ['1x2210', 'xx3210'], 'Gmaj7': ['320002', '3x443x'], 'Dmaj7': ['xx0222', 'x57675'], 'Amaj7': ['x02120', '5x665x']
   };
 
-  function renderFretboardHTML(nome, shape) {
+  let modalCurrentChordStr = '';
+  let modalCurrentShapes = [];
+  let modalCurrentShapeIndex = 0;
+
+  function renderFretboardHTML(nome, shape, index, total) {
       let frets = shape.split('').map(s => s.toLowerCase() === 'x' ? -1 : parseInt(s));
       let minFret = Math.min(...frets.filter(f => f > 0));
       let maxFret = Math.max(...frets.filter(f => f > 0));
       let startFret = 1;
       if (maxFret > 4) startFret = minFret;
       
-      let html = `<div style="text-align:center; padding-bottom: 10px;">
-          <div style="font-size:28px; font-weight:900; color:#38bdf8; margin-bottom:20px;">${nome}</div>
-          <div style="display:inline-flex; position:relative; padding-top:20px; padding-left:20px; padding-right:10px;">`;
-          
+      // Cores Dinâmicas baseadas no Modo do App
+      let txtColor = isDarkMode ? '#f8fafc' : '#1e293b';
+      let nutColor = isDarkMode ? '#cbd5e1' : '#1e293b';
+      let gridColor = isDarkMode ? '#475569' : '#94a3b8';
+      let markerColor = isDarkMode ? '#94a3b8' : '#64748b';
+      let arrowColor = isDarkMode ? '#38bdf8' : '#0284c7';
+      
+      let setasHtml = '';
+      let contadorHtml = '';
+      
+      if (total > 1) {
+          setasHtml = `
+              <button onclick="mudarShapeAcorde(-1)" style="position:absolute; left:-40px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:32px; cursor:pointer; padding:10px;">&#10094;</button>
+              <button onclick="mudarShapeAcorde(1)" style="position:absolute; right:-40px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:32px; cursor:pointer; padding:10px;">&#10095;</button>
+          `;
+          contadorHtml = `<div style="font-size:13px; color:${markerColor}; font-weight:600;">Variação ${index + 1} de ${total}</div>`;
+      }
+      
+      let html = `<div style="text-align:center; padding-bottom: 10px; color:${txtColor};">
+          <div style="font-size:32px; font-weight:900; color:#38bdf8; margin-bottom:0px;">${nome}</div>
+          ${contadorHtml}
+          <div style="display:inline-flex; position:relative; padding-top:20px; padding-left:20px; padding-right:10px; margin-top:5px;">
+              ${setasHtml}`;
+              
       if (startFret > 1) {
-          html += `<div style="position:absolute; left:-10px; top:25px; font-weight:bold; color:#94a3b8; font-size:14px;">${startFret}ª</div>`;
+          html += `<div style="position:absolute; left:-15px; top:25px; font-weight:bold; color:${markerColor}; font-size:14px;">${startFret}ª</div>`;
       }
 
-      let topBorder = startFret === 1 ? 'border-top: 6px solid #cbd5e1;' : 'border-top: 2px solid #475569;';
+      let topBorder = startFret === 1 ? `border-top: 6px solid ${nutColor};` : `border-top: 2px solid ${gridColor};`;
       
-      html += `<div style="display:flex; justify-content:space-between; width:120px; ${topBorder} padding-top:0px; position:relative; height: 140px;">`;
+      html += `<div style="display:flex; justify-content:space-between; width:130px; ${topBorder} padding-top:0px; position:relative; height: 160px;">`;
       
       for(let i=1; i<=4; i++) {
-          let top = i * 32;
-          html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:#475569;"></div>`;
+          let top = i * 36;
+          html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:${gridColor};"></div>`;
       }
 
       for(let i=0; i<6; i++) {
@@ -499,13 +529,13 @@
           let topMarker = val === -1 ? 'X' : (val === 0 ? 'O' : '');
           let colorMarker = val === -1 ? '#ef4444' : '#10b981';
           
-          html += `<div style="width:2px; height:100%; background:#94a3b8; position:relative;">
+          html += `<div style="width:2px; height:100%; background:${gridColor}; position:relative;">
               <div style="position:absolute; top:-25px; left:-5px; width:12px; text-align:center; font-size:14px; font-weight:bold; color:${colorMarker};">${topMarker}</div>`;
               
           if (val > 0) {
               let dotFret = val - startFret; 
               if(dotFret >= 0 && dotFret < 4) {
-                  let dotTop = (dotFret * 32) + 16 - 8; 
+                  let dotTop = (dotFret * 36) + 18 - 8; 
                   html += `<div style="position:absolute; top:${dotTop}px; left:-7px; width:16px; height:16px; background:#38bdf8; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`;
               }
           }
@@ -516,9 +546,32 @@
       return html;
   }
 
+  window.mudarShapeAcorde = function(direction) {
+      modalCurrentShapeIndex += direction;
+      if (modalCurrentShapeIndex < 0) modalCurrentShapeIndex = modalCurrentShapes.length - 1;
+      if (modalCurrentShapeIndex >= modalCurrentShapes.length) modalCurrentShapeIndex = 0;
+      atualizarConteudoModalAcorde();
+  };
+
+  function atualizarConteudoModalAcorde() {
+      let modal = document.getElementById('chord-modal');
+      let shape = modalCurrentShapes[modalCurrentShapeIndex];
+      let totalShapes = modalCurrentShapes.length;
+      
+      let contentHtml = renderFretboardHTML(modalCurrentChordStr, shape, modalCurrentShapeIndex, totalShapes);
+      
+      modal.innerHTML = `
+          <div class="custom-alert-box" style="width:auto; max-width:350px;">
+              ${contentHtml}
+              <button class="custom-alert-btn" style="width:100%; text-align:center; font-size:16px;" onclick="document.getElementById('chord-modal').classList.remove('show')">FECHAR</button>
+          </div>
+      `;
+      setTimeout(() => modal.classList.add('show'), 10);
+  }
+
   function mostrarAcorde(acordeStr) {
       let baseChord = acordeStr.replace(/[^a-zA-Z0-9#b]/g, '');
-      let shape = chordsDB[acordeStr] || chordsDB[baseChord];
+      let shapes = chordsDB[acordeStr] || chordsDB[baseChord];
 
       let modal = document.getElementById('chord-modal');
       if(!modal) {
@@ -528,25 +581,27 @@
           document.body.appendChild(modal);
       }
 
-      let contentHtml = '';
-      if (shape) {
-          contentHtml = renderFretboardHTML(acordeStr, shape);
-      } else {
-          contentHtml = `<div style="text-align:center; padding: 20px;">
-              <div style="font-size:24px; color:#38bdf8; font-weight:bold; margin-bottom:10px;">${acordeStr}</div>
-              <div style="color:#94a3b8; font-size:14px; margin-bottom:15px;">Acorde não mapeado no dicionário offline.</div>
-              <a href="https://www.cifraclub.com.br/acordes/?q=${encodeURIComponent(acordeStr)}" target="_blank" style="display:inline-block; background:#d97706; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:bold;">Buscar na Web</a>
-          </div>`;
-      }
+      if (isDarkMode) modal.classList.add('dark-mode');
+      else modal.classList.remove('dark-mode');
 
-      modal.innerHTML = `
-          <div class="custom-alert-box" style="width:auto; max-width:350px;">
-              ${contentHtml}
-              <button class="custom-alert-btn" onclick="document.getElementById('chord-modal').classList.remove('show')">Fechar</button>
-          </div>
-      `;
-      
-      setTimeout(() => modal.classList.add('show'), 10);
+      if (shapes && shapes.length > 0) {
+          modalCurrentChordStr = acordeStr;
+          modalCurrentShapes = typeof shapes === 'string' ? [shapes] : shapes;
+          modalCurrentShapeIndex = 0;
+          atualizarConteudoModalAcorde();
+      } else {
+          modal.innerHTML = `
+              <div class="custom-alert-box" style="width:auto; max-width:350px;">
+                  <div style="text-align:center; padding: 20px;">
+                      <div style="font-size:24px; color:#38bdf8; font-weight:bold; margin-bottom:10px;">${acordeStr}</div>
+                      <div style="font-size:14px; margin-bottom:15px; opacity:0.8;">Acorde não mapeado no dicionário offline.</div>
+                      <a href="https://www.cifraclub.com.br/acordes/?q=${encodeURIComponent(acordeStr)}" target="_blank" style="display:inline-block; background:#d97706; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:bold;">Buscar na Web</a>
+                  </div>
+                  <button class="custom-alert-btn" style="width:100%; text-align:center;" onclick="document.getElementById('chord-modal').classList.remove('show')">FECHAR</button>
+              </div>
+          `;
+          setTimeout(() => modal.classList.add('show'), 10);
+      }
   }
 
   // Gatilho global que escuta o clique em QUALQUER cifra do aplicativo
@@ -578,22 +633,24 @@
       overlay.id = 'custom-help-modal';
       overlay.className = 'custom-alert-overlay';
       
+      if (isDarkMode) overlay.classList.add('dark-mode');
+
       overlay.innerHTML = `
           <div class="custom-alert-box" style="max-width: 450px; text-align: left;">
               <div style="font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
                   💡 Dicas e Ajuda
               </div>
-              <div style="font-size: 14px; line-height: 1.5; color: #f8fafc; display: flex; flex-direction: column; gap: 12px;">
-                  <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #d97706; display: flex; flex-direction: column; gap: 8px;">
-                      <div><b>Importação:</b> <span style="color: #cbd5e1;">Cole o link do Cifra Club acima e clique em "Puxar".</span></div>
-                      <div><b>Transposição:</b> <span style="color: #cbd5e1;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
-                      <div><b>Capotraste:</b> <span style="color: #cbd5e1;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
-                      <div><b>Separar partes:</b> <span style="color: #cbd5e1;">Digite <b>--</b> (2 traços) ou <b>__</b> (2 underlines) numa linha vazia, e crie uma separação entre as partes da música.</span></div>
-                      <div><b>Criar colunas:</b> <span style="color: #cbd5e1;">Digite <b>|</b> (barra vertical) numa linha vazia para dividir Lado Esquerdo e Direito!</span></div>
-                      <div><b>Deixar o texto Negrito:</b> <span style="color: #cbd5e1;">Digite <b>[b]</b> acima da linha de início do trecho que você quer deixar negrito e depois digite <b>[/b]</b> abaixo da linha no fim do trecho que deseja deixar em destaque.</span></div>
+              <div style="font-size: 14px; line-height: 1.5; color: inherit; display: flex; flex-direction: column; gap: 12px;">
+                  <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #d97706; display: flex; flex-direction: column; gap: 8px;">
+                      <div><b>Importação:</b> <span style="opacity: 0.8;">Cole o link do Cifra Club acima e clique em "Puxar".</span></div>
+                      <div><b>Transposição:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
+                      <div><b>Capotraste:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
+                      <div><b>Separar partes:</b> <span style="opacity: 0.8;">Digite <b>--</b> (2 traços) ou <b>__</b> (2 underlines) numa linha vazia, e crie uma separação entre as partes da música.</span></div>
+                      <div><b>Criar colunas:</b> <span style="opacity: 0.8;">Digite <b>|</b> (barra vertical) numa linha vazia para dividir Lado Esquerdo e Direito!</span></div>
+                      <div><b>Deixar o texto Negrito:</b> <span style="opacity: 0.8;">Digite <b>[b]</b> acima da linha de início do trecho que você quer deixar negrito e depois digite <b>[/b]</b> abaixo da linha no fim do trecho que deseja deixar em destaque.</span></div>
                   </div>
-                  <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #0284c7;">
-                      <b>Colagem Inteligente:</b><br><span style="color: #cbd5e1;">Se o botão "Puxar" for bloqueado pelo site no celular, basta ir ao Cifra Club, copiar a letra toda e colar nesta caixa. Ela será limpa e formatada magicamente!</span>
+                  <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #0284c7;">
+                      <b>Colagem Inteligente:</b><br><span style="opacity: 0.8;">Se o botão "Puxar" for bloqueado pelo site no celular, basta ir ao Cifra Club, copiar a letra toda e colar nesta caixa. Ela será limpa e formatada magicamente!</span>
                   </div>
               </div>
               <button class="custom-alert-btn" style="margin-top: 10px;" onclick="fecharAjuda()">ENTENDI</button>
@@ -620,6 +677,8 @@
       overlay.id = 'custom-alert';
       overlay.className = 'custom-alert-overlay';
       
+      if (isDarkMode) overlay.classList.add('dark-mode');
+
       let icon = mensagem.includes('sucesso') || mensagem.includes('✅') ? '✅' : '⚠️';
       let textoLimpo = mensagem.replace('✅ ', ''); 
 
@@ -653,6 +712,8 @@
           let overlay = document.createElement('div');
           overlay.id = 'custom-alert';
           overlay.className = 'custom-alert-overlay';
+
+          if (isDarkMode) overlay.classList.add('dark-mode');
 
           overlay.innerHTML = `
               <div class="custom-alert-box">
