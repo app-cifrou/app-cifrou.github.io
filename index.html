@@ -298,7 +298,7 @@
     body.theme-red .dark-mode .chord { color: #f87171 !important; font-weight: bold !important;}
   }
 
-  /* ESTILOS DO NOVO TOOLTIP (BALÃO) DE ACORDES */
+  /* ESTILOS DO NOVO TOOLTIP (BALÃO) DE ACORDES E ZOOM DINÂMICO */
   .chord-tooltip {
       position: absolute;
       z-index: 10000000; 
@@ -308,15 +308,14 @@
       padding: 15px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      transform: translateY(10px);
+      transition: opacity 0.2s ease;
       border: 1px solid #cbd5e1;
       font-family: system-ui, sans-serif;
+      transform-origin: bottom center; /* Escala a partir da base do balão */
   }
   .chord-tooltip.show {
       opacity: 1;
       pointer-events: auto;
-      transform: translateY(0);
   }
   .dark-mode.chord-tooltip {
       background: #1e1e1e;
@@ -338,6 +337,9 @@
   }
   .dark-mode.chord-tooltip::after {
       border-color: #1e1e1e transparent transparent transparent;
+  }
+  .chord-tooltip.inverted {
+      transform-origin: top center; /* Se inverter, escala a partir do topo */
   }
   .chord-tooltip.inverted::after {
       top: -8px;
@@ -653,7 +655,9 @@
           html += `</div>`;
       }
       
-      html += `</div></div></div></div>`;
+      html += `</div></div>`;
+      html += `${setasHtmlRight}`;
+      html += `</div></div>`;
       return html;
   }
 
@@ -677,6 +681,21 @@
   }
 
   function posicionarTooltip(tooltip, element) {
+      // 1. Pega o zoom dinâmico da página base
+      let currentZoom = 1;
+      let isPalco = document.body.classList.contains('palco-ativo');
+      if (isPalco) {
+          let p = document.querySelector('#stage-a4-container .a4-page');
+          if (p && p.style.zoom) currentZoom = parseFloat(p.style.zoom) || 1;
+      } else {
+          let w = document.getElementById('a4-wrapper');
+          if (w && w.style.zoom) currentZoom = parseFloat(w.style.zoom) || 1;
+      }
+
+      // Aplica o zoom ao balão (ele respira junto com a folha)
+      tooltip.style.zoom = currentZoom;
+
+      // 2. Calcula as posições na tela real
       const rect = element.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
       const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft;
@@ -684,7 +703,9 @@
       tooltip.classList.add('show');
       const tooltipRect = tooltip.getBoundingClientRect();
 
-      let top = rect.top + scrollTop - tooltipRect.height - 15;
+      let gap = 15 * currentZoom; // O distanciamento da seta também obedece o zoom
+
+      let top = rect.top + scrollTop - tooltipRect.height - gap;
       let left = rect.left + scrollLeft + (rect.width / 2) - (tooltipRect.width / 2);
 
       tooltip.classList.remove('inverted');
@@ -694,38 +715,28 @@
           left = window.innerWidth - tooltipRect.width - 10;
       }
       
-      if (rect.top - tooltipRect.height - 15 < 0) {
-          top = rect.bottom + scrollTop + 10;
+      if (rect.top - tooltipRect.height - gap < 0) {
+          top = rect.bottom + scrollTop + (10 * currentZoom);
           tooltip.classList.add('inverted'); 
       }
 
-      tooltip.style.top = top + 'px';
-      tooltip.style.left = left + 'px';
+      // 3. Divide as coordenadas pelo zoom para que o engine desenhe no lugar correto
+      tooltip.style.top = (top / currentZoom) + 'px';
+      tooltip.style.left = (left / currentZoom) + 'px';
   }
 
   // O SISTEMA DE BUSCA E FALLBACK INTELIGENTE
   function mostrarAcorde(acordeStr, elementClicado) {
-      // 1. Tradutor de Cifras: Converte a formatação brasileira (7M, º) para o padrão do dicionário
-      let cleanChord = acordeStr.replace('7M', 'maj7')
-                                .replace('º', 'dim')
-                                .replace('°', 'dim')
-                                .replace('+', 'aug')
-                                .replace('(b5)', 'b5')
-                                .replace(/[\(\)]/g, ''); 
-
-      // 2. Remove pontuações estranhas, mas mantém o Baixo (/)
+      let cleanChord = acordeStr.replace('7M', 'maj7').replace('º', 'dim').replace('°', 'dim').replace('+', 'aug').replace('(b5)', 'b5').replace(/[\(\)]/g, ''); 
       let baseChord = cleanChord.replace(/[^a-zA-Z0-9#b\/]/g, '');
       
-      // Tentativa 1: Busca o acorde exato
       let shapes = chordsDB[cleanChord] || chordsDB[baseChord];
 
-      // FALLBACK 1: Se não achar, remove o Baixo para tentar te salvar (Ex: Dm7/F# vira Dm7)
       if (!shapes && baseChord.includes('/')) {
           let rootOnly = baseChord.split('/')[0];
           shapes = chordsDB[rootOnly];
       }
       
-      // FALLBACK 2: Simplifica extensões compostas (Ex: Dm79 vira Dm7 ou Dm)
       if (!shapes) {
           let match = baseChord.match(/^[A-G][#b]?(m|maj|dim|aug|sus)?(7|6|9)?/);
           if (match && match[0]) {
@@ -733,7 +744,6 @@
           }
       }
       
-      // FALLBACK 3: Medida drástica. Mostra apenas a Raiz Maior ou Menor
       if (!shapes) {
           let rootMatch = baseChord.match(/^[A-G][#b]?m?/);
           if (rootMatch && rootMatch[0]) {
@@ -778,7 +788,7 @@
           e.stopPropagation();
           mostrarAcorde(e.target.innerText.trim(), e.target);
       } else if (e.target.closest('#chord-tooltip')) {
-          // Clique dentro do balão (nas setas) não fecha o balão
+          // Clique dentro do balão
       } else {
           let tooltip = document.getElementById('chord-tooltip');
           if (tooltip) tooltip.classList.remove('show');
