@@ -356,9 +356,11 @@
   }
   .custom-alert-overlay.show { opacity: 1; pointer-events: auto; }
   .custom-alert-box {
+      /* MODO CLARO PADRÃO */
       background: #ffffff; color: #1e293b; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
       width: 85%; max-width: 450px; transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 20px; font-family: system-ui, sans-serif;
   }
+  /* MODO ESCURO */
   .dark-mode .custom-alert-box { background: #1e1e1e; color: #f3f4f6; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   .custom-alert-overlay.show .custom-alert-box { transform: scale(1); }
   .custom-alert-content { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; line-height: 1.4; }
@@ -571,25 +573,26 @@
       let markerColor = isDarkMode ? '#94a3b8' : '#64748b';
       let arrowColor = isDarkMode ? '#38bdf8' : '#0284c7';
       
-      let setasHtmlLeft = '';
-      let setasHtmlRight = '';
+      // Espaçadores fixos para manter a simetria perfeita mesmo sem setas
+      let setasHtmlLeft = `<div style="width:24px; flex-shrink:0;"></div>`;
+      let setasHtmlRight = `<div style="width:24px; flex-shrink:0;"></div>`;
       let contadorHtml = '';
       
       if (total > 1) {
-          setasHtmlLeft = `<button onclick="mudarShapeAcorde(-1, event)" style="position:absolute; left:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10094;</button>`;
-          setasHtmlRight = `<button onclick="mudarShapeAcorde(1, event)" style="position:absolute; right:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10095;</button>`;
-          contadorHtml = `<div style="font-size:12px; color:${markerColor}; font-weight:600; margin-top:-2px; margin-bottom: 12px;">Variação ${index + 1} de ${total}</div>`;
+          setasHtmlLeft = `<button onclick="mudarShapeAcorde(-1, event)" style="width:24px; flex-shrink:0; background:none; border:none; color:${arrowColor}; font-size:28px; cursor:pointer; padding:0; line-height:1; outline:none; text-align:center;">&#10094;</button>`;
+          setasHtmlRight = `<button onclick="mudarShapeAcorde(1, event)" style="width:24px; flex-shrink:0; background:none; border:none; color:${arrowColor}; font-size:28px; cursor:pointer; padding:0; line-height:1; outline:none; text-align:center;">&#10095;</button>`;
+          contadorHtml = `<div style="font-size:12px; color:${markerColor}; font-weight:600; margin-top:-2px; margin-bottom: 8px;">Variação ${index + 1} de ${total}</div>`;
       }
       
-      let html = `<div style="text-align:center; padding-bottom: 5px; color:${txtColor};">
-          <div style="font-size:26px; font-weight:900; color:#38bdf8; margin-bottom:2px; line-height:1.2;">${nome}</div>
+      let html = `<div style="text-align:center; padding-bottom: 0px; color:${txtColor};">
+          <div style="font-size:28px; font-weight:900; color:#38bdf8; margin-bottom:2px; line-height:1.2;">${nome}</div>
           ${contadorHtml}
-          <div style="position:relative; display:inline-block; width:100px; margin-top:15px; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:15px; margin-bottom:5px;">
               ${setasHtmlLeft}
-              ${setasHtmlRight}`;
+              <div style="position:relative; width:100px;">`;
               
       if (startFret > 1) {
-          html += `<div style="position:absolute; left:-28px; top:10px; font-weight:bold; color:${markerColor}; font-size:13px; text-align:right; width:20px;">${startFret}ª</div>`;
+          html += `<div style="position:absolute; left:-24px; top:8px; font-weight:bold; color:${markerColor}; font-size:12px; text-align:right; width:20px;">${startFret}ª</div>`;
       }
 
       let topBorder = startFret === 1 ? `border-top: 5px solid ${nutColor};` : `border-top: 2px solid ${gridColor};`;
@@ -616,7 +619,7 @@
       
       for(let i=1; i<=4; i++) {
           let top = i * 30; 
-          html += `<div style="position:absolute; top:${top}px; left:0; width:102px; height:2px; background:${gridColor};"></div>`;
+          html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:${gridColor};"></div>`;
       }
 
       if (isBarre) {
@@ -650,7 +653,7 @@
           html += `</div>`;
       }
       
-      html += `</div></div></div>`;
+      html += `</div></div></div></div>`;
       return html;
   }
 
