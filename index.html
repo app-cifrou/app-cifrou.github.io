@@ -832,7 +832,9 @@
   });
 
   function isChord(w) {
-      const chordRegex = /^[A-G](#|b)?(m|M|maj|min|dim|aug|sus|add)?\d*(M|m)?\d*(\([^)]+\))?(º|°|\+|-)?(\/[A-G](#|b)?)?$/i;
+      // O "i" no final do Regex foi removido para forçar o reconhecimento 
+      // estrito de notas raízes apenas em Maiúsculo (A-G), evitando conflito com "a" e "e".
+      const chordRegex = /^[A-G](#|b)?(m|M|maj|min|dim|aug|sus|add)?\d*(M|m)?\d*(\([^)]+\))?(º|°|\+|-)?(\/[A-G](#|b)?)?$/;
       return chordRegex.test(w);
   }
 
