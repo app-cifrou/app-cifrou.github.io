@@ -214,6 +214,10 @@
       min-width: 0 !important;
       max-width: 50% !important;
   }
+
+  /* NOVIDADE: Efeito visual indicando que os acordes são clicáveis */
+  .chord { cursor: pointer; transition: 0.2s; position: relative; }
+  .chord:hover { text-decoration: underline; opacity: 0.8; }
   
   /* ESTILOS DO MODO ESCURO GERAL */
   .brand-text-setlist { color: #0f172a; font-weight: 800; }
@@ -274,6 +278,8 @@
     .badge, .tone-badge, .split-col-divider, .a4-page { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     .capo-text { color: #dc2626 !important; }
     .doc-footer { color: #94a3b8 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    
+    .chord { text-decoration: none !important; cursor: default !important; }
 
     .dark-mode .a4-page { background-color: #121212 !important; color: #e2e8f0 !important; }
     .dark-mode .cifra-content, .dark-mode .brand-text-setlist { color: #e2e8f0 !important; }
@@ -293,7 +299,7 @@
   }
 
   .custom-alert-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999999; 
       display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
   }
   .custom-alert-overlay.show { opacity: 1; pointer-events: auto; }
@@ -352,8 +358,8 @@
             </select>
         </div>
 
-        <!-- MODO PALCO (MOVIDO PARA O FINAL COM NOVO ID) -->
-        <button class="btn-primary header-btn" id="btn-modo-palco" style="background:#8b5cf6;" onclick="abrirModoPalco()">🎸🎹 Modo Palco 🎤🥁</button>
+        <!-- MODO PALCO COM EMOJIS ATUALIZADOS -->
+        <button class="btn-primary header-btn" id="btn-modo-palco" style="background:#8b5cf6;" onclick="abrirModoPalco()">🎸🎤 Modo Palco 🎹🥁</button>
   </div>
   
   <div class="songs-container">
@@ -452,6 +458,110 @@
 </div>
 
 <script>
+  /* ==========================================
+     DICIONÁRIO OFFLINE DE ACORDES (NÍVEL OURO)
+     ========================================== */
+  const chordsDB = {
+      'A': 'x02220', 'A#': 'x13331', 'Bb': 'x13331', 'B': 'x24442', 'C': 'x32010', 'C#': 'x46664', 'Db': 'x46664', 'D': 'xx0232', 'D#': 'xx1343', 'Eb': 'xx1343', 'E': '022100', 'F': '133211', 'F#': '244322', 'Gb': '244322', 'G': '320003', 'G#': '466544', 'Ab': '466544',
+      'Am': 'x02210', 'A#m': 'x13321', 'Bbm': 'x13321', 'Bm': 'x24432', 'Cm': 'x35543', 'C#m': 'x46654', 'Dbm': 'x46654', 'Dm': 'xx0231', 'D#m': 'xx1342', 'Ebm': 'xx1342', 'Em': '022000', 'Fm': '133111', 'F#m': '244222', 'Gbm': '244222', 'Gm': '355333', 'G#m': '466444', 'Abm': '466444',
+      'A7': 'x02020', 'B7': 'x21202', 'C7': 'x32310', 'D7': 'xx0212', 'E7': '020100', 'F7': '131211', 'G7': '320001',
+      'Am7': 'x02010', 'Bm7': 'x24232', 'Cm7': 'x35343', 'Dm7': 'xx0211', 'Em7': '022030', 'Fm7': '131111', 'Gm7': '353333',
+      'C9': 'x3233x', 'D9': 'x5455x', 'A9': 'x02200', 'G9': '3x0203', 'E9': '022102',
+      'Cmaj7': 'x32000', 'Fmaj7': '1x2210', 'Gmaj7': '320002', 'Dmaj7': 'xx0222', 'Amaj7': 'x02120'
+  };
+
+  function renderFretboardHTML(nome, shape) {
+      let frets = shape.split('').map(s => s.toLowerCase() === 'x' ? -1 : parseInt(s));
+      let minFret = Math.min(...frets.filter(f => f > 0));
+      let maxFret = Math.max(...frets.filter(f => f > 0));
+      let startFret = 1;
+      if (maxFret > 4) startFret = minFret;
+      
+      let html = `<div style="text-align:center; padding-bottom: 10px;">
+          <div style="font-size:28px; font-weight:900; color:#38bdf8; margin-bottom:20px;">${nome}</div>
+          <div style="display:inline-flex; position:relative; padding-top:20px; padding-left:20px; padding-right:10px;">`;
+          
+      if (startFret > 1) {
+          html += `<div style="position:absolute; left:-10px; top:25px; font-weight:bold; color:#94a3b8; font-size:14px;">${startFret}ª</div>`;
+      }
+
+      let topBorder = startFret === 1 ? 'border-top: 6px solid #cbd5e1;' : 'border-top: 2px solid #475569;';
+      
+      html += `<div style="display:flex; justify-content:space-between; width:120px; ${topBorder} padding-top:0px; position:relative; height: 140px;">`;
+      
+      for(let i=1; i<=4; i++) {
+          let top = i * 32;
+          html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:#475569;"></div>`;
+      }
+
+      for(let i=0; i<6; i++) {
+          let val = frets[i];
+          let topMarker = val === -1 ? 'X' : (val === 0 ? 'O' : '');
+          let colorMarker = val === -1 ? '#ef4444' : '#10b981';
+          
+          html += `<div style="width:2px; height:100%; background:#94a3b8; position:relative;">
+              <div style="position:absolute; top:-25px; left:-5px; width:12px; text-align:center; font-size:14px; font-weight:bold; color:${colorMarker};">${topMarker}</div>`;
+              
+          if (val > 0) {
+              let dotFret = val - startFret; 
+              if(dotFret >= 0 && dotFret < 4) {
+                  let dotTop = (dotFret * 32) + 16 - 8; 
+                  html += `<div style="position:absolute; top:${dotTop}px; left:-7px; width:16px; height:16px; background:#38bdf8; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`;
+              }
+          }
+          html += `</div>`;
+      }
+      
+      html += `</div></div></div>`;
+      return html;
+  }
+
+  function mostrarAcorde(acordeStr) {
+      let baseChord = acordeStr.replace(/[^a-zA-Z0-9#b]/g, '');
+      let shape = chordsDB[acordeStr] || chordsDB[baseChord];
+
+      let modal = document.getElementById('chord-modal');
+      if(!modal) {
+          modal = document.createElement('div');
+          modal.id = 'chord-modal';
+          modal.className = 'custom-alert-overlay'; 
+          document.body.appendChild(modal);
+      }
+
+      let contentHtml = '';
+      if (shape) {
+          contentHtml = renderFretboardHTML(acordeStr, shape);
+      } else {
+          contentHtml = `<div style="text-align:center; padding: 20px;">
+              <div style="font-size:24px; color:#38bdf8; font-weight:bold; margin-bottom:10px;">${acordeStr}</div>
+              <div style="color:#94a3b8; font-size:14px; margin-bottom:15px;">Acorde não mapeado no dicionário offline.</div>
+              <a href="https://www.cifraclub.com.br/acordes/?q=${encodeURIComponent(acordeStr)}" target="_blank" style="display:inline-block; background:#d97706; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:bold;">Buscar na Web</a>
+          </div>`;
+      }
+
+      modal.innerHTML = `
+          <div class="custom-alert-box" style="width:auto; max-width:350px;">
+              ${contentHtml}
+              <button class="custom-alert-btn" onclick="document.getElementById('chord-modal').classList.remove('show')">Fechar</button>
+          </div>
+      `;
+      
+      setTimeout(() => modal.classList.add('show'), 10);
+  }
+
+  // Gatilho global que escuta o clique em QUALQUER cifra do aplicativo
+  document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('chord')) {
+          e.preventDefault();
+          e.stopPropagation(); // Impede o clique de ativar a tela cheia acidentalmente
+          mostrarAcorde(e.target.innerText.trim());
+      }
+  });
+
+  /* ==========================================
+     LÓGICA PRINCIPAL DO APLICATIVO
+     ========================================== */
+
   let songs = [];
   let currentIndex = 0;
   let renderTimeout = null;
@@ -1746,14 +1856,14 @@ function renderizarListaPalco() {
 }
 
 function toggleStageSidebar(event) {
-    // Evita que arrastar a folha seja confundido com um clique para fechar a tela
+    // Evita que arrastar a folha ou clicar numa cifra feche a tela inteira
     if (window.stageHasDragged) {
         setTimeout(() => { window.stageHasDragged = false; }, 50);
         return;
     }
     
-    // Evita conflito se você clicar nos botões de Vídeo ou Cifra no cabeçalho da música
-    if (event && event.target && event.target.closest('a')) return;
+    // Evita conflito se você clicar nos botões de Vídeo, Cifra ou nos Acordes
+    if (event && event.target && (event.target.closest('a') || event.target.closest('button') || event.target.classList.contains('chord'))) return;
     
     const overlay = document.getElementById('stage-mode-overlay');
     overlay.classList.toggle('reading-mode'); 
@@ -1828,7 +1938,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicia o arrasto (Clique e segura)
     stageContent.addEventListener('mousedown', (e) => {
-        if (e.target.closest('a') || e.target.closest('button')) return;
+        if (e.target.closest('a') || e.target.closest('button') || e.target.classList.contains('chord')) return;
         
         // MÁGICA: Previne o comportamento padrão que seleciona o texto
         e.preventDefault(); 
