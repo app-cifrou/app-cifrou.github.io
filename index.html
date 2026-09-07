@@ -1030,7 +1030,13 @@
             let finalLine = isChordLine ? transposeLineText(currentLine, steps) : currentLine;
             let safeLine = finalLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\*(.*?)\*/g, '<b>$1</b>');
             
-            if (isChordLine) out += `<span class="chord">${safeLine}</span>\n`;
+            if (isChordLine) {
+                // NOVO: Separar cada acorde da linha na sua própria tag <span class="chord">
+                let colorizedLine = safeLine.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
+                    return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
+                });
+                out += `${colorizedLine}\n`;
+            }
             else out += globalIsBold ? `<b>${safeLine}</b>\n` : `${safeLine}\n`;
         }
         return out;
@@ -1411,10 +1417,9 @@
       let introHtml = '';
       if (song.intro && song.intro.trim() !== '') {
           let transposedIntro = transposeLineText(song.intro.replace(/^\[?Intro\]?:?\s*/i, '').trim(), song.transposeSteps || 0);
-          let colorizedIntro = transposedIntro.split(/(\s+)/).map(w => {
-              if (w.trim() === '') return w;
-              return isChord(w) ? `<span class="chord">${w}</span>` : w;
-          }).join('');
+          let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
+              return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
+          });
           introHtml = `[Intro] ${colorizedIntro}\n\n`;
       }
       
