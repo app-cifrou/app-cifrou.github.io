@@ -465,7 +465,7 @@
 
 <script>
   /* ==========================================
-     DICIONÁRIO OFFLINE DE ACORDES (NÍVEL OURO) COM MÚLTIPLOS SHAPES E NAVEGAÇÃO
+     DICIONÁRIO OFFLINE DE ACORDES COM PESTANAS (NÍVEL OURO)
      ========================================== */
   const chordsDB = {
       'A': ['x02220', '577655'], 'A#': ['x13331', '688766'], 'Bb': ['x13331', '688766'], 'B': ['x24442', '799877'], 'C': ['x32010', 'x35553', '81010988'], 'C#': ['x46664', '911111099'], 'Db': ['x46664', '911111099'], 'D': ['xx0232', 'x57775'], 'D#': ['xx1343', 'x68886'], 'Eb': ['xx1343', 'x68886'], 'E': ['022100', 'x79997'], 'F': ['133211', 'x81010108', 'xx3211'], 'F#': ['244322', 'x91111119'], 'Gb': ['244322', 'x91111119'], 'G': ['320003', '355433', '320033'], 'G#': ['466544', 'x1113131311'], 'Ab': ['466544', 'x1113131311'],
@@ -482,8 +482,9 @@
 
   function renderFretboardHTML(nome, shape, index, total) {
       let frets = shape.split('').map(s => s.toLowerCase() === 'x' ? -1 : parseInt(s));
-      let minFret = Math.min(...frets.filter(f => f > 0));
-      let maxFret = Math.max(...frets.filter(f => f > 0));
+      let validFrets = frets.filter(f => f > 0);
+      let minFret = validFrets.length > 0 ? Math.min(...validFrets) : 0;
+      let maxFret = validFrets.length > 0 ? Math.max(...validFrets) : 0;
       let startFret = 1;
       if (maxFret > 4) startFret = minFret;
       
@@ -517,26 +518,65 @@
 
       let topBorder = startFret === 1 ? `border-top: 6px solid ${nutColor};` : `border-top: 2px solid ${gridColor};`;
       
-      html += `<div style="display:flex; justify-content:space-between; width:130px; ${topBorder} padding-top:0px; position:relative; height: 160px;">`;
+      // DETECÇÃO DA PESTANA (BARRE CHORD)
+      let isBarre = false;
+      let barreFirstIndex = -1;
+      let barreLastIndex = -1;
       
+      if (minFret > 0) {
+          barreFirstIndex = frets.indexOf(minFret);
+          barreLastIndex = frets.lastIndexOf(minFret);
+          let span = barreLastIndex - barreFirstIndex;
+          let count = frets.filter(f => f === minFret).length;
+          
+          let hasOpenInside = false;
+          for(let i = barreFirstIndex; i <= barreLastIndex; i++) {
+              if (frets[i] === 0) hasOpenInside = true;
+          }
+          
+          // Consideramos pestana se o dedo repetir 2+ vezes, abranger pelo menos 4 cordas (span >= 3)
+          // e não existirem cordas soltas embaixo do dedo cruzado.
+          if (count >= 2 && span >= 3 && !hasOpenInside) {
+              isBarre = true;
+          }
+      }
+
+      html += `<div style="display:flex; justify-content:space-between; width:130px; ${topBorder} padding-top:0px; position:relative; height: 160px; z-index: 1;">`;
+      
+      // Desenha as Casas (Linhas Horizontais)
       for(let i=1; i<=4; i++) {
           let top = i * 36;
           html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:${gridColor};"></div>`;
       }
 
+      // Renderiza a Pestana Visual Exclusiva
+      if (isBarre) {
+          let dotFret = minFret - startFret;
+          if (dotFret >= 0 && dotFret < 4) {
+              let dotTop = (dotFret * 36) + 18 - 8;
+              let bLeft = (barreFirstIndex * 25.6) - 7;
+              let bWidth = ((barreLastIndex - barreFirstIndex) * 25.6) + 16;
+              html += `<div style="position:absolute; top:${dotTop}px; left:${bLeft}px; width:${bWidth}px; height:16px; background:#38bdf8; border-radius:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5;"></div>`;
+          }
+      }
+
+      // Desenha as Cordas (Linhas Verticais) e Bolinhas Individuais
       for(let i=0; i<6; i++) {
           let val = frets[i];
           let topMarker = val === -1 ? 'X' : (val === 0 ? 'O' : '');
           let colorMarker = val === -1 ? '#ef4444' : '#10b981';
           
-          html += `<div style="width:2px; height:100%; background:${gridColor}; position:relative;">
+          html += `<div style="width:2px; height:100%; background:${gridColor}; position:relative; z-index: 2;">
               <div style="position:absolute; top:-25px; left:-5px; width:12px; text-align:center; font-size:14px; font-weight:bold; color:${colorMarker};">${topMarker}</div>`;
               
           if (val > 0) {
               let dotFret = val - startFret; 
               if(dotFret >= 0 && dotFret < 4) {
-                  let dotTop = (dotFret * 36) + 18 - 8; 
-                  html += `<div style="position:absolute; top:${dotTop}px; left:-7px; width:16px; height:16px; background:#38bdf8; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`;
+                  // Oculta a bolinha individual APENAS se ela for coberta pela barra da Pestana
+                  if (!(isBarre && val === minFret)) {
+                      let dotTop = (dotFret * 36) + 18 - 8; 
+                      html += `<div style="position:absolute; top:${dotTop}px; left:-7px; width:16px; height:16px; background:#38bdf8; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;"></div>`;
+                  }
               }
           }
           html += `</div>`;
