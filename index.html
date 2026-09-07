@@ -215,7 +215,7 @@
       max-width: 50% !important;
   }
 
-  /* NOVIDADE: Efeito visual indicando que os acordes são clicáveis */
+  /* Efeito visual indicando que os acordes são clicáveis */
   .chord { cursor: pointer; transition: 0.2s; position: relative; border-radius: 4px; padding: 0 2px; margin: 0 -2px;}
   .chord:hover { background: rgba(128,128,128,0.2); text-decoration: underline; }
   
@@ -298,12 +298,10 @@
     body.theme-red .dark-mode .chord { color: #f87171 !important; font-weight: bold !important;}
   }
 
-  /* =======================================
-     ESTILOS DO NOVO TOOLTIP (BALÃO) DE ACORDES
-     ======================================= */
+  /* ESTILOS DO NOVO TOOLTIP (BALÃO) DE ACORDES */
   .chord-tooltip {
       position: absolute;
-      z-index: 10000000; /* Acima de tudo na tela */
+      z-index: 10000000; 
       background: #ffffff;
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
@@ -326,7 +324,6 @@
       border-color: #334155;
       color: #f8fafc;
   }
-  /* Triângulo do Balão */
   .chord-tooltip::after {
       content: '';
       position: absolute;
@@ -359,13 +356,10 @@
   }
   .custom-alert-overlay.show { opacity: 1; pointer-events: auto; }
   .custom-alert-box {
-      /* MODO CLARO PADRÃO */
       background: #ffffff; color: #1e293b; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
       width: 85%; max-width: 450px; transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 20px; font-family: system-ui, sans-serif;
   }
-  /* MODO ESCURO */
   .dark-mode .custom-alert-box { background: #1e1e1e; color: #f3f4f6; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-  
   .custom-alert-overlay.show .custom-alert-box { transform: scale(1); }
   .custom-alert-content { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; line-height: 1.4; }
   .custom-alert-btn, .custom-btn-cancel, .custom-btn-ok { background: transparent; border: none; font-size: 15px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
@@ -577,26 +571,25 @@
       let markerColor = isDarkMode ? '#94a3b8' : '#64748b';
       let arrowColor = isDarkMode ? '#38bdf8' : '#0284c7';
       
-      let setasHtml = '';
+      let setasHtmlLeft = '';
+      let setasHtmlRight = '';
       let contadorHtml = '';
       
       if (total > 1) {
-          // MÁGICA AQUI: O event.stopPropagation() nas setinhas trava o clique para não fechar a janela
-          setasHtml = `
-              <button onclick="mudarShapeAcorde(-1, event)" style="position:absolute; left:-22px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10094;</button>
-              <button onclick="mudarShapeAcorde(1, event)" style="position:absolute; right:-12px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10095;</button>
-          `;
-          contadorHtml = `<div style="font-size:11px; color:${markerColor}; font-weight:600; margin-top:-5px;">Variação ${index + 1} de ${total}</div>`;
+          setasHtmlLeft = `<button onclick="mudarShapeAcorde(-1, event)" style="position:absolute; left:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10094;</button>`;
+          setasHtmlRight = `<button onclick="mudarShapeAcorde(1, event)" style="position:absolute; right:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10095;</button>`;
+          contadorHtml = `<div style="font-size:12px; color:${markerColor}; font-weight:600; margin-top:-2px; margin-bottom: 12px;">Variação ${index + 1} de ${total}</div>`;
       }
       
       let html = `<div style="text-align:center; padding-bottom: 5px; color:${txtColor};">
-          <div style="font-size:24px; font-weight:900; color:#38bdf8; margin-bottom:5px;">${nome}</div>
+          <div style="font-size:26px; font-weight:900; color:#38bdf8; margin-bottom:2px; line-height:1.2;">${nome}</div>
           ${contadorHtml}
-          <div style="display:inline-flex; position:relative; padding-top:15px; padding-left:15px; padding-right:5px; margin-top:5px;">
-              ${setasHtml}`;
+          <div style="position:relative; display:inline-block; width:100px; margin-top:15px; margin-bottom:10px;">
+              ${setasHtmlLeft}
+              ${setasHtmlRight}`;
               
       if (startFret > 1) {
-          html += `<div style="position:absolute; left:-12px; top:18px; font-weight:bold; color:${markerColor}; font-size:12px;">${startFret}ª</div>`;
+          html += `<div style="position:absolute; left:-28px; top:10px; font-weight:bold; color:${markerColor}; font-size:13px; text-align:right; width:20px;">${startFret}ª</div>`;
       }
 
       let topBorder = startFret === 1 ? `border-top: 5px solid ${nutColor};` : `border-top: 2px solid ${gridColor};`;
@@ -619,11 +612,11 @@
           }
       }
 
-      html += `<div style="display:flex; justify-content:space-between; width:100px; ${topBorder} padding-top:0px; position:relative; height: 130px; z-index: 1;">`;
+      html += `<div style="width:100px; ${topBorder} position:relative; height: 130px; z-index: 1;">`;
       
       for(let i=1; i<=4; i++) {
           let top = i * 30; 
-          html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:${gridColor};"></div>`;
+          html += `<div style="position:absolute; top:${top}px; left:0; width:102px; height:2px; background:${gridColor};"></div>`;
       }
 
       if (isBarre) {
@@ -640,9 +633,10 @@
           let val = frets[i];
           let topMarker = val === -1 ? 'X' : (val === 0 ? 'O' : '');
           let colorMarker = val === -1 ? '#ef4444' : '#10b981';
+          let leftPos = i * 20; 
           
-          html += `<div style="width:2px; height:100%; background:${gridColor}; position:relative; z-index: 2;">
-              <div style="position:absolute; top:-20px; left:-5px; width:12px; text-align:center; font-size:12px; font-weight:bold; color:${colorMarker};">${topMarker}</div>`;
+          html += `<div style="position:absolute; left:${leftPos}px; top:0; bottom:0; width:2px; background:${gridColor}; z-index: 2;">
+              <div style="position:absolute; top:-22px; left:-5px; width:12px; text-align:center; font-size:13px; font-weight:bold; color:${colorMarker};">${topMarker}</div>`;
               
           if (val > 0) {
               let dotFret = val - startFret; 
@@ -660,7 +654,6 @@
       return html;
   }
 
-  // ATUALIZADO: Recebe o 'event' para barrar o clique de fechar o tooltip
   window.mudarShapeAcorde = function(direction, event) {
       if (event) {
           event.preventDefault();
@@ -1621,6 +1614,9 @@
   window.addEventListener('resize', () => {
       ajustarEscalaA4();
       if (typeof ajustarEscalaPalco === 'function') ajustarEscalaPalco();
+      // Oculta o tooltip se a tela for redimensionada
+      let tooltip = document.getElementById('chord-tooltip');
+      if (tooltip) tooltip.classList.remove('show');
   });
 
   // Gatilho exclusivo para forçar a renderização ao deitar/levantar celulares Android e iOS
@@ -1629,6 +1625,8 @@
           ajustarEscalaA4();
           if (typeof ajustarEscalaPalco === 'function') ajustarEscalaPalco();
       }, 300);
+      let tooltip = document.getElementById('chord-tooltip');
+      if (tooltip) tooltip.classList.remove('show');
   });
 
   function renderPreview() {
