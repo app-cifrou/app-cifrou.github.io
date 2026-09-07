@@ -216,8 +216,8 @@
   }
 
   /* NOVIDADE: Efeito visual indicando que os acordes são clicáveis */
-  .chord { cursor: pointer; transition: 0.2s; position: relative; }
-  .chord:hover { text-decoration: underline; opacity: 0.8; }
+  .chord { cursor: pointer; transition: 0.2s; position: relative; border-radius: 4px; padding: 0 2px; margin: 0 -2px;}
+  .chord:hover { background: rgba(128,128,128,0.2); text-decoration: underline; }
   
   /* ESTILOS DO MODO ESCURO GERAL */
   .brand-text-setlist { color: #0f172a; font-weight: 800; }
@@ -279,7 +279,7 @@
     .capo-text { color: #dc2626 !important; }
     .doc-footer { color: #94a3b8 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     
-    .chord { text-decoration: none !important; cursor: default !important; }
+    .chord { text-decoration: none !important; cursor: default !important; background: none !important; }
 
     .dark-mode .a4-page { background-color: #121212 !important; color: #e2e8f0 !important; }
     .dark-mode .cifra-content, .dark-mode .brand-text-setlist { color: #e2e8f0 !important; }
@@ -298,20 +298,71 @@
     body.theme-red .dark-mode .chord { color: #f87171 !important; font-weight: bold !important;}
   }
 
-  /* MODAIS CLAROS E ESCUROS ATUALIZADOS */
+  /* =======================================
+     ESTILOS DO NOVO TOOLTIP (BALÃO) DE ACORDES
+     ======================================= */
+  .chord-tooltip {
+      position: absolute;
+      z-index: 10000000; /* Acima de tudo na tela */
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      padding: 15px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      transform: translateY(10px);
+      border: 1px solid #cbd5e1;
+      font-family: system-ui, sans-serif;
+  }
+  .chord-tooltip.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+  }
+  .dark-mode.chord-tooltip {
+      background: #1e1e1e;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      border-color: #334155;
+      color: #f8fafc;
+  }
+  /* Triângulo do Balão */
+  .chord-tooltip::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 8px 8px 0;
+      border-style: solid;
+      border-color: #ffffff transparent transparent transparent;
+      display: block;
+      width: 0;
+  }
+  .dark-mode.chord-tooltip::after {
+      border-color: #1e1e1e transparent transparent transparent;
+  }
+  .chord-tooltip.inverted::after {
+      top: -8px;
+      bottom: auto;
+      border-width: 0 8px 8px;
+      border-color: transparent transparent #ffffff transparent;
+  }
+  .dark-mode.chord-tooltip.inverted::after {
+      border-color: transparent transparent #1e1e1e transparent;
+  }
+
+  /* Modais Normais (Dicas e Alertas) */
   .custom-alert-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999999; 
       display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
   }
   .custom-alert-overlay.show { opacity: 1; pointer-events: auto; }
   .custom-alert-box {
-      /* MODO CLARO PADRÃO */
       background: #ffffff; color: #1e293b; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
       width: 85%; max-width: 450px; transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 20px; font-family: system-ui, sans-serif;
   }
-  /* MODO ESCURO */
   .dark-mode .custom-alert-box { background: #1e1e1e; color: #f3f4f6; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-  
   .custom-alert-overlay.show .custom-alert-box { transform: scale(1); }
   .custom-alert-content { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; line-height: 1.4; }
   .custom-alert-btn, .custom-btn-cancel, .custom-btn-ok { background: transparent; border: none; font-size: 15px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
@@ -465,8 +516,7 @@
 
 <script>
   /* ==========================================
-     DICIONÁRIO OFFLINE DE ACORDES COM PESTANAS (NÍVEL OURO)
-     AGORA COM ACORDES COM BAIXO (SLASH CHORDS)
+     DICIONÁRIO OFFLINE DE ACORDES COM TOOLTIP (BALÃO) E PESTANAS
      ========================================== */
   const chordsDB = {
       'A': ['x02220', '577655'], 'A#': ['x13331', '688766'], 'Bb': ['x13331', '688766'], 'B': ['x24442', '799877'], 
@@ -496,12 +546,12 @@
       'G/D': ['xx0003'], 'A/E': ['002220'], 'D/C': ['x30232']
   };
 
-  let modalCurrentChordStr = '';
-  let modalCurrentShapes = [];
-  let modalCurrentShapeIndex = 0;
+  let tooltipCurrentChordStr = '';
+  let tooltipCurrentShapes = [];
+  let tooltipCurrentShapeIndex = 0;
+  let tooltipCurrentElement = null; // Guarda o elemento clicado para posicionar o balão
 
   function renderFretboardHTML(nome, shape, index, total) {
-      // Suporte para casas acima da 9ª separadas por hífen (ex: x-10-12-12-11-10)
       let frets = shape.includes('-') ? shape.split('-') : shape.split('');
       frets = frets.map(s => s.toLowerCase() === 'x' ? -1 : parseInt(s));
 
@@ -511,7 +561,6 @@
       let startFret = 1;
       if (maxFret > 4) startFret = minFret;
       
-      // Cores Dinâmicas baseadas no Modo do App
       let txtColor = isDarkMode ? '#f8fafc' : '#1e293b';
       let nutColor = isDarkMode ? '#cbd5e1' : '#1e293b';
       let gridColor = isDarkMode ? '#475569' : '#94a3b8';
@@ -522,26 +571,27 @@
       let contadorHtml = '';
       
       if (total > 1) {
+          // As setas agora têm tamanhos um pouco menores para caber no balão
           setasHtml = `
-              <button onclick="mudarShapeAcorde(-1)" style="position:absolute; left:-40px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:32px; cursor:pointer; padding:10px;">&#10094;</button>
-              <button onclick="mudarShapeAcorde(1)" style="position:absolute; right:-40px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:32px; cursor:pointer; padding:10px;">&#10095;</button>
+              <button onclick="mudarShapeAcorde(-1)" style="position:absolute; left:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:24px; cursor:pointer; padding:5px;">&#10094;</button>
+              <button onclick="mudarShapeAcorde(1)" style="position:absolute; right:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:24px; cursor:pointer; padding:5px;">&#10095;</button>
           `;
-          contadorHtml = `<div style="font-size:13px; color:${markerColor}; font-weight:600;">Variação ${index + 1} de ${total}</div>`;
+          contadorHtml = `<div style="font-size:11px; color:${markerColor}; font-weight:600; margin-top:-5px;">Variação ${index + 1} de ${total}</div>`;
       }
       
-      let html = `<div style="text-align:center; padding-bottom: 10px; color:${txtColor};">
-          <div style="font-size:32px; font-weight:900; color:#38bdf8; margin-bottom:0px;">${nome}</div>
+      // Ajuste de tamanhos para o visual de Tooltip (Balão Flutuante)
+      let html = `<div style="text-align:center; padding-bottom: 5px; color:${txtColor};">
+          <div style="font-size:24px; font-weight:900; color:#38bdf8; margin-bottom:5px;">${nome}</div>
           ${contadorHtml}
-          <div style="display:inline-flex; position:relative; padding-top:20px; padding-left:20px; padding-right:10px; margin-top:5px;">
+          <div style="display:inline-flex; position:relative; padding-top:15px; padding-left:15px; padding-right:5px; margin-top:5px;">
               ${setasHtml}`;
               
       if (startFret > 1) {
-          html += `<div style="position:absolute; left:-15px; top:25px; font-weight:bold; color:${markerColor}; font-size:14px;">${startFret}ª</div>`;
+          html += `<div style="position:absolute; left:-12px; top:18px; font-weight:bold; color:${markerColor}; font-size:12px;">${startFret}ª</div>`;
       }
 
-      let topBorder = startFret === 1 ? `border-top: 6px solid ${nutColor};` : `border-top: 2px solid ${gridColor};`;
+      let topBorder = startFret === 1 ? `border-top: 5px solid ${nutColor};` : `border-top: 2px solid ${gridColor};`;
       
-      // DETECÇÃO DA PESTANA (BARRE CHORD)
       let isBarre = false;
       let barreFirstIndex = -1;
       let barreLastIndex = -1;
@@ -551,54 +601,48 @@
           barreLastIndex = frets.lastIndexOf(minFret);
           let span = barreLastIndex - barreFirstIndex;
           let count = frets.filter(f => f === minFret).length;
-          
           let hasOpenInside = false;
           for(let i = barreFirstIndex; i <= barreLastIndex; i++) {
               if (frets[i] === 0) hasOpenInside = true;
           }
-          
-          // Consideramos pestana se o dedo repetir 2+ vezes, abranger pelo menos 4 cordas (span >= 3)
-          // e não existirem cordas soltas embaixo do dedo cruzado.
           if (count >= 2 && span >= 3 && !hasOpenInside) {
               isBarre = true;
           }
       }
 
-      html += `<div style="display:flex; justify-content:space-between; width:130px; ${topBorder} padding-top:0px; position:relative; height: 160px; z-index: 1;">`;
+      // Reduzimos o grid para caber no balão elegantemente
+      html += `<div style="display:flex; justify-content:space-between; width:100px; ${topBorder} padding-top:0px; position:relative; height: 130px; z-index: 1;">`;
       
-      // Desenha as Casas (Linhas Horizontais)
       for(let i=1; i<=4; i++) {
-          let top = i * 36;
+          let top = i * 30; // Distância entre as casas reduzida de 36 para 30
           html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:${gridColor};"></div>`;
       }
 
-      // Renderiza a Pestana Visual Exclusiva
       if (isBarre) {
           let dotFret = minFret - startFret;
           if (dotFret >= 0 && dotFret < 4) {
-              let dotTop = (dotFret * 36) + 18 - 8;
-              let bLeft = (barreFirstIndex * 25.6) - 7;
-              let bWidth = ((barreLastIndex - barreFirstIndex) * 25.6) + 16;
-              html += `<div style="position:absolute; top:${dotTop}px; left:${bLeft}px; width:${bWidth}px; height:16px; background:#38bdf8; border-radius:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5;"></div>`;
+              let dotTop = (dotFret * 30) + 15 - 7;
+              let bLeft = (barreFirstIndex * 20) - 6; // 100px / 5 intervalos = 20px
+              let bWidth = ((barreLastIndex - barreFirstIndex) * 20) + 14;
+              html += `<div style="position:absolute; top:${dotTop}px; left:${bLeft}px; width:${bWidth}px; height:14px; background:#38bdf8; border-radius:7px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5;"></div>`;
           }
       }
 
-      // Desenha as Cordas (Linhas Verticais) e Bolinhas Individuais
       for(let i=0; i<6; i++) {
           let val = frets[i];
           let topMarker = val === -1 ? 'X' : (val === 0 ? 'O' : '');
           let colorMarker = val === -1 ? '#ef4444' : '#10b981';
           
           html += `<div style="width:2px; height:100%; background:${gridColor}; position:relative; z-index: 2;">
-              <div style="position:absolute; top:-25px; left:-5px; width:12px; text-align:center; font-size:14px; font-weight:bold; color:${colorMarker};">${topMarker}</div>`;
+              <div style="position:absolute; top:-20px; left:-5px; width:12px; text-align:center; font-size:12px; font-weight:bold; color:${colorMarker};">${topMarker}</div>`;
               
           if (val > 0) {
               let dotFret = val - startFret; 
               if(dotFret >= 0 && dotFret < 4) {
-                  // Oculta a bolinha individual APENAS se ela for coberta pela barra da Pestana
                   if (!(isBarre && val === minFret)) {
-                      let dotTop = (dotFret * 36) + 18 - 8; 
-                      html += `<div style="position:absolute; top:${dotTop}px; left:-7px; width:16px; height:16px; background:#38bdf8; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;"></div>`;
+                      let dotTop = (dotFret * 30) + 15 - 7; 
+                      // Bolinhas menores (14px)
+                      html += `<div style="position:absolute; top:${dotTop}px; left:-6px; width:14px; height:14px; background:#38bdf8; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;"></div>`;
                   }
               }
           }
@@ -610,78 +654,115 @@
   }
 
   window.mudarShapeAcorde = function(direction) {
-      modalCurrentShapeIndex += direction;
-      if (modalCurrentShapeIndex < 0) modalCurrentShapeIndex = modalCurrentShapes.length - 1;
-      if (modalCurrentShapeIndex >= modalCurrentShapes.length) modalCurrentShapeIndex = 0;
-      atualizarConteudoModalAcorde();
+      tooltipCurrentShapeIndex += direction;
+      if (tooltipCurrentShapeIndex < 0) tooltipCurrentShapeIndex = tooltipCurrentShapes.length - 1;
+      if (tooltipCurrentShapeIndex >= tooltipCurrentShapes.length) tooltipCurrentShapeIndex = 0;
+      atualizarConteudoTooltip();
   };
 
-  function atualizarConteudoModalAcorde() {
-      let modal = document.getElementById('chord-modal');
-      let shape = modalCurrentShapes[modalCurrentShapeIndex];
-      let totalShapes = modalCurrentShapes.length;
+  function atualizarConteudoTooltip() {
+      let tooltip = document.getElementById('chord-tooltip');
+      let shape = tooltipCurrentShapes[tooltipCurrentShapeIndex];
+      let totalShapes = tooltipCurrentShapes.length;
       
-      let contentHtml = renderFretboardHTML(modalCurrentChordStr, shape, modalCurrentShapeIndex, totalShapes);
-      
-      modal.innerHTML = `
-          <div class="custom-alert-box" style="width:auto; max-width:350px;">
-              ${contentHtml}
-              <button class="custom-alert-btn" style="width:100%; text-align:center; font-size:16px;" onclick="document.getElementById('chord-modal').classList.remove('show')">FECHAR</button>
-          </div>
-      `;
-      setTimeout(() => modal.classList.add('show'), 10);
+      tooltip.innerHTML = renderFretboardHTML(tooltipCurrentChordStr, shape, tooltipCurrentShapeIndex, totalShapes);
   }
 
-  function mostrarAcorde(acordeStr) {
-      // PRESERVA A BARRA DO BAIXO ("/") NA BUSCA DO ACORDE BASE
+  // POSICIONAMENTO INTELIGENTE DO BALÃO EM CIMA DA PALAVRA CLICADA
+  function posicionarTooltip(tooltip, element) {
+      // Usamos zoom nativo do navegador para o cálculo do elemento (no modo palco o zoom afeta as medidas)
+      const rect = element.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft;
+
+      tooltip.classList.add('show');
+      const tooltipRect = tooltip.getBoundingClientRect();
+
+      // Posição base: Centralizado horizontalmente e acima da palavra
+      let top = rect.top + scrollTop - tooltipRect.height - 15;
+      let left = rect.left + scrollLeft + (rect.width / 2) - (tooltipRect.width / 2);
+
+      tooltip.classList.remove('inverted');
+
+      // Proteção contra corte lateral (Se estiver muito pra esquerda ou direita)
+      if (left < 10) left = 10;
+      if (left + tooltipRect.width > window.innerWidth - 10) {
+          left = window.innerWidth - tooltipRect.width - 10;
+      }
+      
+      // Proteção de Altura: Se a cifra estiver grudada lá no teto, inverte o balão para baixo!
+      if (rect.top - tooltipRect.height - 15 < 0) {
+          top = rect.bottom + scrollTop + 10;
+          tooltip.classList.add('inverted'); // Inverte o "bico" do balão
+      }
+
+      tooltip.style.top = top + 'px';
+      tooltip.style.left = left + 'px';
+  }
+
+  function mostrarAcorde(acordeStr, elementClicado) {
       let baseChord = acordeStr.replace(/[^a-zA-Z0-9#b\/]/g, '');
       let shapes = chordsDB[acordeStr] || chordsDB[baseChord];
 
-      // FALLBACK INTELIGENTE: Se não achar o acorde exato com baixo, procura apenas a "raiz" antes do baixo
       if (!shapes && baseChord.includes('/')) {
           let rootOnly = baseChord.split('/')[0];
           shapes = chordsDB[rootOnly];
       }
 
-      let modal = document.getElementById('chord-modal');
-      if(!modal) {
-          modal = document.createElement('div');
-          modal.id = 'chord-modal';
-          modal.className = 'custom-alert-overlay'; 
-          document.body.appendChild(modal);
+      let tooltip = document.getElementById('chord-tooltip');
+      if(!tooltip) {
+          tooltip = document.createElement('div');
+          tooltip.id = 'chord-tooltip';
+          tooltip.className = 'chord-tooltip'; 
+          document.body.appendChild(tooltip);
       }
 
-      if (isDarkMode) modal.classList.add('dark-mode');
-      else modal.classList.remove('dark-mode');
+      if (isDarkMode) tooltip.classList.add('dark-mode');
+      else tooltip.classList.remove('dark-mode');
+
+      tooltipCurrentElement = elementClicado;
 
       if (shapes && shapes.length > 0) {
-          modalCurrentChordStr = acordeStr;
-          modalCurrentShapes = typeof shapes === 'string' ? [shapes] : shapes;
-          modalCurrentShapeIndex = 0;
-          atualizarConteudoModalAcorde();
+          tooltipCurrentChordStr = acordeStr;
+          tooltipCurrentShapes = typeof shapes === 'string' ? [shapes] : shapes;
+          tooltipCurrentShapeIndex = 0;
+          atualizarConteudoTooltip();
       } else {
-          modal.innerHTML = `
-              <div class="custom-alert-box" style="width:auto; max-width:350px;">
-                  <div style="text-align:center; padding: 20px;">
-                      <div style="font-size:24px; color:#38bdf8; font-weight:bold; margin-bottom:10px;">${acordeStr}</div>
-                      <div style="font-size:14px; margin-bottom:15px; opacity:0.8;">Acorde não mapeado no dicionário offline.</div>
-                      <a href="https://www.cifraclub.com.br/acordes/?q=${encodeURIComponent(acordeStr)}" target="_blank" style="display:inline-block; background:#d97706; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:bold;">Buscar na Web</a>
-                  </div>
-                  <button class="custom-alert-btn" style="width:100%; text-align:center;" onclick="document.getElementById('chord-modal').classList.remove('show')">FECHAR</button>
+          // Layout de Falha também refeito para caber no balão pequeno
+          tooltip.innerHTML = `
+              <div style="text-align:center; padding: 5px;">
+                  <div style="font-size:20px; color:#38bdf8; font-weight:bold; margin-bottom:5px;">${acordeStr}</div>
+                  <div style="font-size:12px; margin-bottom:10px; opacity:0.8;">Acorde não mapeado.</div>
+                  <a href="https://www.cifraclub.com.br/acordes/?q=${encodeURIComponent(acordeStr)}" target="_blank" style="display:inline-block; background:#d97706; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:12px;">Buscar na Web</a>
               </div>
           `;
-          setTimeout(() => modal.classList.add('show'), 10);
       }
+      
+      posicionarTooltip(tooltip, elementClicado);
   }
 
-  // Gatilho global que escuta o clique em QUALQUER cifra do aplicativo
+  // GATILHO GLOBAL (Abre a cifra e fecha se clicar fora)
   document.addEventListener('click', function(e) {
       if (e.target.classList.contains('chord')) {
           e.preventDefault();
-          e.stopPropagation(); // Impede o clique de ativar a tela cheia acidentalmente
-          mostrarAcorde(e.target.innerText.trim());
+          e.stopPropagation();
+          mostrarAcorde(e.target.innerText.trim(), e.target);
+      } else if (e.target.closest('#chord-tooltip')) {
+          // Se clicou dentro do próprio balão (como para passar a seta), não faz nada.
+      } else {
+          // Se clicou em qualquer lugar vazio da tela, mata o balão de acorde
+          let tooltip = document.getElementById('chord-tooltip');
+          if (tooltip) tooltip.classList.remove('show');
       }
   });
+
+  // Oculta o balão de cifra automaticamente se o usuário começar a rolar a tela
+  window.addEventListener('scroll', function() {
+      let tooltip = document.getElementById('chord-tooltip');
+      if (tooltip && tooltip.classList.contains('show')) {
+          tooltip.classList.remove('show');
+      }
+  }, true);
 
   /* ==========================================
      LÓGICA PRINCIPAL DO APLICATIVO
@@ -1073,8 +1154,6 @@
   });
 
   function isChord(w) {
-      // O "i" no final do Regex foi removido para forçar o reconhecimento 
-      // estrito de notas raízes apenas em Maiúsculo (A-G), evitando conflito com "a" e "e".
       const chordRegex = /^[A-G](#|b)?(m|M|maj|min|dim|aug|sus|add)?\d*(M|m)?\d*(\([^)]+\))?(º|°|\+|-)?(\/[A-G](#|b)?)?$/;
       return chordRegex.test(w);
   }
@@ -1162,7 +1241,6 @@
             let safeLine = finalLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\*(.*?)\*/g, '<b>$1</b>');
             
             if (isChordLine) {
-                // NOVO: Separar cada acorde da linha na sua própria tag <span class="chord">
                 let colorizedLine = safeLine.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
                     return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
                 });
