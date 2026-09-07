@@ -1906,16 +1906,15 @@
               const file = new File([jsonStr], fileName, { type: "application/json" });
               if (navigator.canShare({ files: [file] })) {
                   try {
+                      // CORREÇÃO: Enviando apenas o arquivo, sem a tag "text" e "title", 
+                      // para evitar a criação do arquivo .txt extra no iOS.
                       await navigator.share({
-                          files: [file],
-                          title: pName,
-                          text: `Aqui está o repertório: ${pName}`
+                          files: [file]
                       });
                       isDirty = false;
                       return; 
                   } catch (shareErr) {
                       console.log("Compartilhamento cancelado ou falhou", shareErr);
-                      
                   }
               }
           }
