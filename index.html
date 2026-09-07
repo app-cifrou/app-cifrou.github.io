@@ -359,10 +359,13 @@
   }
   .custom-alert-overlay.show { opacity: 1; pointer-events: auto; }
   .custom-alert-box {
+      /* MODO CLARO PADRÃO */
       background: #ffffff; color: #1e293b; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
       width: 85%; max-width: 450px; transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 20px; font-family: system-ui, sans-serif;
   }
+  /* MODO ESCURO */
   .dark-mode .custom-alert-box { background: #1e1e1e; color: #f3f4f6; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  
   .custom-alert-overlay.show .custom-alert-box { transform: scale(1); }
   .custom-alert-content { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; line-height: 1.4; }
   .custom-alert-btn, .custom-btn-cancel, .custom-btn-ok { background: transparent; border: none; font-size: 15px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
@@ -516,28 +519,35 @@
 
 <script>
   /* ==========================================
-     DICIONÁRIO OFFLINE DE ACORDES COM TOOLTIP (BALÃO) E PESTANAS
+     DICIONÁRIO OFFLINE EXPANDIDO E SISTEMA FALLBACK (NÍVEL OURO)
      ========================================== */
   const chordsDB = {
-      'A': ['x02220', '577655'], 'A#': ['x13331', '688766'], 'Bb': ['x13331', '688766'], 'B': ['x24442', '799877'], 
-      'C': ['x32010', 'x35553', '8-10-10-9-8-8'], 'C#': ['x46664', '9-11-11-10-9-9'], 'Db': ['x46664', '9-11-11-10-9-9'], 
-      'D': ['xx0232', 'x57775'], 'D#': ['xx1343', 'x68886'], 'Eb': ['xx1343', 'x68886'], 'E': ['022100', 'x79997'], 
-      'F': ['133211', 'x-8-10-10-10-8', 'xx3211'], 'F#': ['244322', 'x-9-11-11-11-9'], 'Gb': ['244322', 'x-9-11-11-11-9'], 
-      'G': ['320003', '355433', '320033'], 'G#': ['466544', 'x-11-13-13-13-11'], 'Ab': ['466544', 'x-11-13-13-13-11'],
+      // MAIORES E MENORES
+      'C': ['x32010', 'x35553', '8-10-10-9-8-8'], 'C#': ['x46664', '9-11-11-10-9-9'], 'Db': ['x46664', '9-11-11-10-9-9'], 'D': ['xx0232', 'x57775'], 'D#': ['xx1343', 'x68886'], 'Eb': ['xx1343', 'x68886'], 'E': ['022100', 'x79997'], 'F': ['133211', 'x-8-10-10-10-8', 'xx3211'], 'F#': ['244322', 'x-9-11-11-11-9'], 'Gb': ['244322', 'x-9-11-11-11-9'], 'G': ['320003', '355433', '320033'], 'G#': ['466544', 'x-11-13-13-13-11'], 'Ab': ['466544', 'x-11-13-13-13-11'], 'A': ['x02220', '577655'], 'A#': ['x13331', '688766'], 'Bb': ['x13331', '688766'], 'B': ['x24442', '799877'],
+      'Cm': ['x35543', '8-10-10-8-8-8'], 'C#m': ['x46654', '9-11-11-9-9-9'], 'Dbm': ['x46654', '9-11-11-9-9-9'], 'Dm': ['xx0231', 'x57765'], 'D#m': ['xx1342', 'x68876'], 'Ebm': ['xx1342', 'x68876'], 'Em': ['022000', 'x79987'], 'Fm': ['133111', 'x-8-10-10-9-8'], 'F#m': ['244222', 'x-9-11-11-10-9'], 'Gbm': ['244222', 'x-9-11-11-10-9'], 'Gm': ['355333', 'x-10-12-12-11-10'], 'G#m': ['466444', 'x-11-13-13-12-11'], 'Abm': ['466444', 'x-11-13-13-12-11'], 'Am': ['x02210', '577555'], 'A#m': ['x13321', '688666'], 'Bbm': ['x13321', '688666'], 'Bm': ['x24432', '799777'],
       
-      'Am': ['x02210', '577555'], 'A#m': ['x13321', '688666'], 'Bbm': ['x13321', '688666'], 'Bm': ['x24432', '799777'], 
-      'Cm': ['x35543', '8-10-10-8-8-8'], 'C#m': ['x46654', '9-11-11-9-9-9'], 'Dbm': ['x46654', '9-11-11-9-9-9'], 
-      'Dm': ['xx0231', 'x57765'], 'D#m': ['xx1342', 'x68876'], 'Ebm': ['xx1342', 'x68876'], 'Em': ['022000', 'x79987'], 
-      'Fm': ['133111', 'x-8-10-10-9-8'], 'F#m': ['244222', 'x-9-11-11-10-9'], 'Gbm': ['244222', 'x-9-11-11-10-9'], 
-      'Gm': ['355333', 'x-10-12-12-11-10'], 'G#m': ['466444', 'x-11-13-13-12-11'], 'Abm': ['466444', 'x-11-13-13-12-11'],
-      
-      'A7': ['x02020', '575655'], 'B7': ['x21202', '797877'], 'C7': ['x32310', '8-10-8-9-8-8'], 'D7': ['xx0212', 'x57575'], 
-      'E7': ['020100', '022130'], 'F7': ['131211', '131241'], 'G7': ['320001', '353433'],
-      'Am7': ['x02010', '575555'], 'Bm7': ['x24232', '797777'], 'Cm7': ['x35343', '8-10-8-8-8-8'], 'Dm7': ['xx0211', 'x57565'], 
-      'Em7': ['022030', '022000'], 'Fm7': ['131111', '131141'], 'Gm7': ['353333', '353363'],
-      
-      'C9': ['x3233x', 'x32333'], 'D9': ['x5455x', 'x54555'], 'A9': ['x02200', 'x02420'], 'G9': ['3x0203', '300003'], 'E9': ['022102', '020102'],
-      'Cmaj7': ['x32000', 'x35453'], 'Fmaj7': ['1x2210', 'xx3210'], 'Gmaj7': ['320002', '3x443x'], 'Dmaj7': ['xx0222', 'x57675'], 'Amaj7': ['x02120', '5x665x'],
+      // COM 7ª
+      'C7': ['x32310', '8-10-8-9-8-8'], 'C#7': ['x46464'], 'Db7': ['x46464'], 'D7': ['xx0212', 'x57575'], 'D#7': ['xx1323'], 'Eb7': ['xx1323'], 'E7': ['020100', '022130'], 'F7': ['131211', '131241'], 'F#7': ['242322'], 'Gb7': ['242322'], 'G7': ['320001', '353433'], 'G#7': ['464544'], 'Ab7': ['464544'], 'A7': ['x02020', '575655'], 'A#7': ['x13131'], 'Bb7': ['x13131'], 'B7': ['x21202', '797877'],
+      'Cm7': ['x35343', '8-10-8-8-8-8'], 'C#m7': ['x46454'], 'Dbm7': ['x46454'], 'Dm7': ['xx0211', 'x57565'], 'D#m7': ['xx1322'], 'Ebm7': ['xx1322'], 'Em7': ['022030', '022000'], 'Fm7': ['131111', '131141'], 'F#m7': ['242222'], 'Gbm7': ['242222'], 'Gm7': ['353333', '353363'], 'G#m7': ['464444'], 'Abm7': ['464444'], 'Am7': ['x02010', '575555'], 'A#m7': ['x13121'], 'Bbm7': ['x13121'], 'Bm7': ['x24232', '797777'],
+      'Cmaj7': ['x32000', 'x35453'], 'C#maj7': ['x46564'], 'Dbmaj7': ['x46564'], 'Dmaj7': ['xx0222', 'x57675'], 'D#maj7': ['xx1333', 'x68786'], 'Ebmaj7': ['xx1333', 'x68786'], 'Emaj7': ['021100', 'x79897'], 'Fmaj7': ['1x2210', 'xx3210'], 'F#maj7': ['2x332x', 'xx4321'], 'Gbmaj7': ['2x332x', 'xx4321'], 'Gmaj7': ['320002', '3x443x'], 'G#maj7': ['4x554x', 'xx6543'], 'Abmaj7': ['4x554x', 'xx6543'], 'Amaj7': ['x02120', '5x665x'], 'A#maj7': ['x13231', '6x776x'], 'Bbmaj7': ['x13231', '6x776x'], 'Bmaj7': ['x24342', '7x887x'],
+
+      // COM 6ª E MENORES COM 6ª
+      'C6': ['x32210', '8x798x'], 'C#6': ['x4332x'], 'Db6': ['x4332x'], 'D6': ['xx0202', 'x5443x'], 'D#6': ['xx1313', 'x6554x'], 'Eb6': ['xx1313', 'x6554x'], 'E6': ['022120', 'x7665x'], 'F6': ['1x0211', 'xx3231'], 'F#6': ['2x1322', 'xx4342'], 'Gb6': ['2x1322', 'xx4342'], 'G6': ['320000', '3x243x'], 'G#6': ['4x354x', 'xx6564'], 'Ab6': ['4x354x', 'xx6564'], 'A6': ['x02222', '5x465x'], 'A#6': ['x10031', '6x576x'], 'Bb6': ['x10031', '6x576x'], 'B6': ['x2114x', '7x687x'],
+      'Cm6': ['x31213', '8x788x'], 'C#m6': ['x42324'], 'Dbm6': ['x42324'], 'Dm6': ['xx0201', 'x53435'], 'D#m6': ['xx1312', 'x64546'], 'Ebm6': ['xx1312', 'x64546'], 'Em6': ['022020', 'x75657'], 'Fm6': ['1x0111', 'xx3131'], 'F#m6': ['2x1222', 'xx4242'], 'Gbm6': ['2x1222', 'xx4242'], 'Gm6': ['3x0330', '3x233x'], 'G#m6': ['4x1441', '4x344x'], 'Abm6': ['4x1441', '4x344x'], 'Am6': ['x02212', '5x455x'], 'A#m6': ['x13021', '6x566x'], 'Bbm6': ['x13021', '6x566x'], 'Bm6': ['x20102', '7x677x'],
+
+      // COM 9ª E MENORES COM 9ª
+      'C9': ['x3233x', 'x32333'], 'C#9': ['x4344x'], 'Db9': ['x4344x'], 'D9': ['x5455x', 'x54555'], 'D#9': ['x6566x'], 'Eb9': ['x6566x'], 'E9': ['022102', 'x7677x'], 'F9': ['131213', 'x8788x'], 'F#9': ['242324', 'x9899x'], 'Gb9': ['242324', 'x9899x'], 'G9': ['3x0203', 'x-10-9-10-10-x'], 'G#9': ['4x1314', 'x-11-10-11-11-x'], 'Ab9': ['4x1314', 'x-11-10-11-11-x'], 'A9': ['x02200', 'x02420'], 'A#9': ['x10111', 'x10311'], 'Bb9': ['x10111', 'x10311'], 'B9': ['x21222', 'x2122x'],
+      'Cm9': ['x3133x'], 'C#m9': ['x4244x'], 'Dbm9': ['x4244x'], 'Dm9': ['x5355x', 'xx0210'], 'D#m9': ['x6466x'], 'Ebm9': ['x6466x'], 'Em9': ['020002', 'x7577x'], 'Fm9': ['131113', 'x8688x'], 'F#m9': ['242224', 'x9799x'], 'Gbm9': ['242224', 'x9799x'], 'Gm9': ['353335', 'x-10-8-10-10-x'], 'G#m9': ['464446', 'x-11-9-11-11-x'], 'Abm9': ['464446', 'x-11-9-11-11-x'], 'Am9': ['x05500', '575557'], 'A#m9': ['x13111'], 'Bbm9': ['x13111'], 'Bm9': ['x20222', '797779'],
+
+      // SUS4 E SUS2
+      'Csus4': ['x33011', 'x35563'], 'C#sus4': ['x46674'], 'Dbsus4': ['x46674'], 'Dsus4': ['xx0233', 'x57785'], 'D#sus4': ['xx1344'], 'Ebsus4': ['xx1344'], 'Esus4': ['022200', 'x799-10-7'], 'Fsus4': ['133311', 'xx3311'], 'F#sus4': ['244422'], 'Gbsus4': ['244422'], 'Gsus4': ['330033', '355533'], 'G#sus4': ['466644'], 'Absus4': ['466644'], 'Asus4': ['x02230', '577755'], 'A#sus4': ['x13341'], 'Bbsus4': ['x13341'], 'Bsus4': ['x24452', '799977'],
+
+      // DIMINUTOS (dim / º) E MEIOS-DIMINUTOS (m7b5)
+      'Cdim': ['x3424x', 'xx1212'], 'C#dim': ['x4535x', 'xx2323'], 'Dbdim': ['x4535x', 'xx2323'], 'Ddim': ['xx0101', 'x5646x'], 'D#dim': ['xx1212', 'x6757x'], 'Ebdim': ['xx1212', 'x6757x'], 'Edim': ['xx2323', 'x7868x'], 'Fdim': ['xx3434', '1x0101'], 'F#dim': ['xx4545', '2x1212'], 'Gbdim': ['xx4545', '2x1212'], 'Gdim': ['xx5656', '3x2323'], 'G#dim': ['xx6767', '4x3434'], 'Abdim': ['xx6767', '4x3434'], 'Adim': ['x01212', '5x4545'], 'A#dim': ['x1202x', '6x5656'], 'Bbdim': ['x1202x', '6x5656'], 'Bdim': ['x2313x', '7x6767'],
+      'Cm7b5': ['x3434x'], 'C#m7b5': ['x4545x'], 'Dbm7b5': ['x4545x'], 'Dm7b5': ['x5656x', 'xx0111'], 'D#m7b5': ['x6767x'], 'Ebm7b5': ['x6767x'], 'Em7b5': ['010030', 'x7878x'], 'Fm7b5': ['1x110x', 'x8989x'], 'F#m7b5': ['2x221x', 'x9-10-9-10-x'], 'Gbm7b5': ['2x221x', 'x9-10-9-10-x'], 'Gm7b5': ['3x332x'], 'G#m7b5': ['4x443x'], 'Abm7b5': ['4x443x'], 'Am7b5': ['x01010', '5x554x'], 'A#m7b5': ['x1212x', '6x665x'], 'Bbm7b5': ['x1212x', '6x665x'], 'Bm7b5': ['x2323x', '7x776x'],
+
+      // AUMENTADOS (aug / +)
+      'Caug': ['x3211x'], 'C#aug': ['x4322x'], 'Dbaug': ['x4322x'], 'Daug': ['xx0332'], 'D#aug': ['xx1443'], 'Ebaug': ['xx1443'], 'Eaug': ['032110'], 'Faug': ['xx3221'], 'F#aug': ['xx4332'], 'Gbaug': ['xx4332'], 'Gaug': ['321003'], 'G#aug': ['43211x'], 'Abaug': ['43211x'], 'Aaug': ['x03221'], 'A#aug': ['x14332'], 'Bbaug': ['x14332'], 'Baug': ['x25443'],
 
       // ACORDES COM BAIXO (SLASH CHORDS)
       'D/F#': ['200232'], 'G/B': ['x20033', 'x20003'], 'C/E': ['032010'], 'A/C#': ['x42220'],
@@ -549,7 +559,7 @@
   let tooltipCurrentChordStr = '';
   let tooltipCurrentShapes = [];
   let tooltipCurrentShapeIndex = 0;
-  let tooltipCurrentElement = null; // Guarda o elemento clicado para posicionar o balão
+  let tooltipCurrentElement = null; 
 
   function renderFretboardHTML(nome, shape, index, total) {
       let frets = shape.includes('-') ? shape.split('-') : shape.split('');
@@ -571,15 +581,14 @@
       let contadorHtml = '';
       
       if (total > 1) {
-          // As setas agora têm tamanhos um pouco menores para caber no balão
+          // MÁGICA AQUI: O event.stopPropagation() nas setinhas trava o clique para não fechar a janela
           setasHtml = `
-              <button onclick="mudarShapeAcorde(-1)" style="position:absolute; left:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:24px; cursor:pointer; padding:5px;">&#10094;</button>
-              <button onclick="mudarShapeAcorde(1)" style="position:absolute; right:-35px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:24px; cursor:pointer; padding:5px;">&#10095;</button>
+              <button onclick="mudarShapeAcorde(-1, event)" style="position:absolute; left:-22px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10094;</button>
+              <button onclick="mudarShapeAcorde(1, event)" style="position:absolute; right:-12px; top:50%; transform:translateY(-50%); background:none; border:none; color:${arrowColor}; font-size:26px; cursor:pointer; padding:5px; z-index:10; outline:none;">&#10095;</button>
           `;
           contadorHtml = `<div style="font-size:11px; color:${markerColor}; font-weight:600; margin-top:-5px;">Variação ${index + 1} de ${total}</div>`;
       }
       
-      // Ajuste de tamanhos para o visual de Tooltip (Balão Flutuante)
       let html = `<div style="text-align:center; padding-bottom: 5px; color:${txtColor};">
           <div style="font-size:24px; font-weight:900; color:#38bdf8; margin-bottom:5px;">${nome}</div>
           ${contadorHtml}
@@ -610,11 +619,10 @@
           }
       }
 
-      // Reduzimos o grid para caber no balão elegantemente
       html += `<div style="display:flex; justify-content:space-between; width:100px; ${topBorder} padding-top:0px; position:relative; height: 130px; z-index: 1;">`;
       
       for(let i=1; i<=4; i++) {
-          let top = i * 30; // Distância entre as casas reduzida de 36 para 30
+          let top = i * 30; 
           html += `<div style="position:absolute; top:${top}px; left:0; right:0; height:2px; background:${gridColor};"></div>`;
       }
 
@@ -622,7 +630,7 @@
           let dotFret = minFret - startFret;
           if (dotFret >= 0 && dotFret < 4) {
               let dotTop = (dotFret * 30) + 15 - 7;
-              let bLeft = (barreFirstIndex * 20) - 6; // 100px / 5 intervalos = 20px
+              let bLeft = (barreFirstIndex * 20) - 6; 
               let bWidth = ((barreLastIndex - barreFirstIndex) * 20) + 14;
               html += `<div style="position:absolute; top:${dotTop}px; left:${bLeft}px; width:${bWidth}px; height:14px; background:#38bdf8; border-radius:7px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5;"></div>`;
           }
@@ -641,7 +649,6 @@
               if(dotFret >= 0 && dotFret < 4) {
                   if (!(isBarre && val === minFret)) {
                       let dotTop = (dotFret * 30) + 15 - 7; 
-                      // Bolinhas menores (14px)
                       html += `<div style="position:absolute; top:${dotTop}px; left:-6px; width:14px; height:14px; background:#38bdf8; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;"></div>`;
                   }
               }
@@ -653,7 +660,12 @@
       return html;
   }
 
-  window.mudarShapeAcorde = function(direction) {
+  // ATUALIZADO: Recebe o 'event' para barrar o clique de fechar o tooltip
+  window.mudarShapeAcorde = function(direction, event) {
+      if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+      }
       tooltipCurrentShapeIndex += direction;
       if (tooltipCurrentShapeIndex < 0) tooltipCurrentShapeIndex = tooltipCurrentShapes.length - 1;
       if (tooltipCurrentShapeIndex >= tooltipCurrentShapes.length) tooltipCurrentShapeIndex = 0;
@@ -668,9 +680,7 @@
       tooltip.innerHTML = renderFretboardHTML(tooltipCurrentChordStr, shape, tooltipCurrentShapeIndex, totalShapes);
   }
 
-  // POSICIONAMENTO INTELIGENTE DO BALÃO EM CIMA DA PALAVRA CLICADA
   function posicionarTooltip(tooltip, element) {
-      // Usamos zoom nativo do navegador para o cálculo do elemento (no modo palco o zoom afeta as medidas)
       const rect = element.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
       const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft;
@@ -678,35 +688,61 @@
       tooltip.classList.add('show');
       const tooltipRect = tooltip.getBoundingClientRect();
 
-      // Posição base: Centralizado horizontalmente e acima da palavra
       let top = rect.top + scrollTop - tooltipRect.height - 15;
       let left = rect.left + scrollLeft + (rect.width / 2) - (tooltipRect.width / 2);
 
       tooltip.classList.remove('inverted');
 
-      // Proteção contra corte lateral (Se estiver muito pra esquerda ou direita)
       if (left < 10) left = 10;
       if (left + tooltipRect.width > window.innerWidth - 10) {
           left = window.innerWidth - tooltipRect.width - 10;
       }
       
-      // Proteção de Altura: Se a cifra estiver grudada lá no teto, inverte o balão para baixo!
       if (rect.top - tooltipRect.height - 15 < 0) {
           top = rect.bottom + scrollTop + 10;
-          tooltip.classList.add('inverted'); // Inverte o "bico" do balão
+          tooltip.classList.add('inverted'); 
       }
 
       tooltip.style.top = top + 'px';
       tooltip.style.left = left + 'px';
   }
 
+  // O SISTEMA DE BUSCA E FALLBACK INTELIGENTE
   function mostrarAcorde(acordeStr, elementClicado) {
-      let baseChord = acordeStr.replace(/[^a-zA-Z0-9#b\/]/g, '');
-      let shapes = chordsDB[acordeStr] || chordsDB[baseChord];
+      // 1. Tradutor de Cifras: Converte a formatação brasileira (7M, º) para o padrão do dicionário
+      let cleanChord = acordeStr.replace('7M', 'maj7')
+                                .replace('º', 'dim')
+                                .replace('°', 'dim')
+                                .replace('+', 'aug')
+                                .replace('(b5)', 'b5')
+                                .replace(/[\(\)]/g, ''); 
 
+      // 2. Remove pontuações estranhas, mas mantém o Baixo (/)
+      let baseChord = cleanChord.replace(/[^a-zA-Z0-9#b\/]/g, '');
+      
+      // Tentativa 1: Busca o acorde exato
+      let shapes = chordsDB[cleanChord] || chordsDB[baseChord];
+
+      // FALLBACK 1: Se não achar, remove o Baixo para tentar te salvar (Ex: Dm7/F# vira Dm7)
       if (!shapes && baseChord.includes('/')) {
           let rootOnly = baseChord.split('/')[0];
           shapes = chordsDB[rootOnly];
+      }
+      
+      // FALLBACK 2: Simplifica extensões compostas (Ex: Dm79 vira Dm7 ou Dm)
+      if (!shapes) {
+          let match = baseChord.match(/^[A-G][#b]?(m|maj|dim|aug|sus)?(7|6|9)?/);
+          if (match && match[0]) {
+              shapes = chordsDB[match[0]];
+          }
+      }
+      
+      // FALLBACK 3: Medida drástica. Mostra apenas a Raiz Maior ou Menor
+      if (!shapes) {
+          let rootMatch = baseChord.match(/^[A-G][#b]?m?/);
+          if (rootMatch && rootMatch[0]) {
+              shapes = chordsDB[rootMatch[0]];
+          }
       }
 
       let tooltip = document.getElementById('chord-tooltip');
@@ -728,7 +764,6 @@
           tooltipCurrentShapeIndex = 0;
           atualizarConteudoTooltip();
       } else {
-          // Layout de Falha também refeito para caber no balão pequeno
           tooltip.innerHTML = `
               <div style="text-align:center; padding: 5px;">
                   <div style="font-size:20px; color:#38bdf8; font-weight:bold; margin-bottom:5px;">${acordeStr}</div>
@@ -741,22 +776,19 @@
       posicionarTooltip(tooltip, elementClicado);
   }
 
-  // GATILHO GLOBAL (Abre a cifra e fecha se clicar fora)
   document.addEventListener('click', function(e) {
       if (e.target.classList.contains('chord')) {
           e.preventDefault();
           e.stopPropagation();
           mostrarAcorde(e.target.innerText.trim(), e.target);
       } else if (e.target.closest('#chord-tooltip')) {
-          // Se clicou dentro do próprio balão (como para passar a seta), não faz nada.
+          // Clique dentro do balão (nas setas) não fecha o balão
       } else {
-          // Se clicou em qualquer lugar vazio da tela, mata o balão de acorde
           let tooltip = document.getElementById('chord-tooltip');
           if (tooltip) tooltip.classList.remove('show');
       }
   });
 
-  // Oculta o balão de cifra automaticamente se o usuário começar a rolar a tela
   window.addEventListener('scroll', function() {
       let tooltip = document.getElementById('chord-tooltip');
       if (tooltip && tooltip.classList.contains('show')) {
