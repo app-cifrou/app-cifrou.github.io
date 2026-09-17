@@ -21,14 +21,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- TAGS DE NOME PARA INSTALAÇÃO (O SEGREDO DO IOS E ANDROID) -->
-<title>Setlist Pro</title>
-<meta name="application-name" content="Setlist Pro">
-<meta name="apple-mobile-web-app-title" content="Setlist Pro">
+<title>Cifrou</title>
+<meta name="application-name" content="Cifrou">
+<meta name="apple-mobile-web-app-title" content="Cifrou">
 
 <meta name="description" content="O aplicativo definitivo para músicos. Crie, organize e imprima seus repertórios com transposição inteligente e PDFs padrão estúdio.">
 
 <!-- Tags específicas para o WhatsApp ler a sua imagem e título -->
-<meta property="og:title" content="Setlist Pro">
+<meta property="og:title" content="Cifrou">
 <meta property="og:description" content="O aplicativo definitivo para músicos. Crie, organize e imprima seus repertórios com transposição inteligente e PDFs padrão estúdio.">
 <meta property="og:image" content="https://app-setlist-pro.github.io/logo.png">
 <meta property="og:url" content="https://app-setlist-pro.github.io/">
@@ -73,8 +73,7 @@
   .app-logo-area { display: flex; align-items: center; gap: 8px; user-select: none; height: 38px; }
   .app-logo-area img { width: 36px; height: 36px; border-radius: 8px; box-shadow: 0 3px 6px rgba(2, 132, 199, 0.2); }
   .app-logo-area h1 { font-size: 1.4rem; margin: 0; font-family: system-ui, -apple-system, sans-serif; letter-spacing: -0.5px; display: flex; align-items: center; line-height: 1; }
-  .pro-badge { background: #0284c7; color: white; font-size: 0.65rem; font-weight: 900; padding: 3px 6px; border-radius: 6px; margin-left: 6px; letter-spacing: 0.5px; }
-
+  
   /* Correção do Nome do Repertório */
   .project-name-container {
       background: white; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); 
@@ -383,10 +382,9 @@
         
         <!-- LOGO OFICIAL -->
         <div class="app-logo-area">
-            <img src="logo.png" alt="Setlist Pro Logo">
+            <img src="logo.png" alt="Cifrou Logo">
             <h1>
-                <span class="brand-text-setlist">Setlist</span>
-                <span class="pro-badge">PRO</span>
+                <span class="brand-text-setlist">Cifrou</span>
             </h1>
         </div>
         
@@ -506,7 +504,7 @@
   </div>
   
   <div class="app-footer no-print">
-      Copyright &copy; 2026 Setlist Pro. Todos os direitos reservados.
+      Copyright &copy; 2026 Cifrou. Todos os direitos reservados.
   </div>
 </div>
 
@@ -1185,7 +1183,7 @@
 
   window.addEventListener('afterprint', () => {
       setTimeout(() => {
-          document.title = "Setlist Pro";
+          document.title = "Cifrou";
       }, 2000);
 
       if (typeof ajustarEscalaA4 === 'function') ajustarEscalaA4();
@@ -1685,8 +1683,7 @@
                   <div style="display: flex; align-items: center; gap: 6px; user-select: none; flex-shrink: 0;">
                       <img src="logo.png" style="width: 28px; height: 28px; border-radius: 6px;">
                       <div style="font-size: 1.5rem; margin: 0; font-family: system-ui, -apple-system, sans-serif; letter-spacing: -0.5px; line-height: 1; display: flex; align-items: center;">
-                          <span class="brand-text-setlist">Setlist</span>
-                          <span style="background: #0284c7; color: white; font-size: 0.65rem; font-weight: 900; padding: 2px 5px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.5px;">PRO</span>
+                          <span class="brand-text-setlist">Cifrou</span>
                       </div>
                   </div>
               </div>
@@ -1708,7 +1705,7 @@
                 <div class="cifra-content">${introHtml}${parseChords(song.content, song.transposeSteps || 0)}</div>
             </div>
         </div>
-        <div class="doc-footer">Copyright &copy; 2026 Setlist Pro. Todos os direitos reservados.</div>`;
+        <div class="doc-footer">Copyright &copy; 2026 Cifrou. Todos os direitos reservados.</div>`;
       wrapper.appendChild(page);
     });
     
