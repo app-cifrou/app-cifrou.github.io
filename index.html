@@ -1248,6 +1248,7 @@
 
   function parseChords(text, steps = 0) {
     if (!text) return '';
+    text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
     let globalIsBold = false; 
     const lines = text.split('\n');
     let blocks = [];
@@ -1788,7 +1789,7 @@
   }
 
   /* ==========================================
-     A NOVA INTELIGÊNCIA DE EXTRAÇÃO DE INTRO
+     NOVA INTELIGÊNCIA DE EXTRAÇÃO MULTI-ROTA (BLINDADA)
      ========================================== */
   async function fetchCifraClubData() {
       let urlInput = document.getElementById('i-cifra').value.trim();
@@ -1797,39 +1798,105 @@
       if (!urlInput || !urlInput.includes('cifraclub')) {
           alert("Cole um link válido do Cifra Club."); return;
       }
-      urlInput = urlInput.split('?')[0].split('#')[0];
+      
+      // Limpa parâmetros extras e garante a URL base limpa
+      let baseUrl = urlInput.split('?')[0].split('#')[0].replace(/\/imprimir\.html\/?$/i, '').replace(/\/+$/, '');
+      let printUrl = baseUrl + '/imprimir.html';
+      let normalUrl = baseUrl + '/';
       
       const originalText = btn.innerHTML;
       btn.innerHTML = "⏳...";
       btn.disabled = true;
 
-      try {
-          const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec";
-          const finalUrl = googleProxy + "?url=" + encodeURIComponent(urlInput);
-          
-          const response = await fetch(finalUrl);
-          if (!response.ok) throw new Error("Falha no proxy particular.");
-          
-          const htmlText = await response.text();
-          
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(htmlText, "text/html");
-          
-          let titleStr = "Nova Música", artistStr = "", tomStr = "";
-          const pageTitle = doc.querySelector('title');
-          if (pageTitle && pageTitle.textContent.includes('-')) {
-              let parts = pageTitle.textContent.split('-');
-              if (parts.length >= 2) { titleStr = parts[0].trim(); artistStr = parts[1].trim(); }
-          }
-          
-          const tomRegex = doc.body.textContent.match(/Tom:\s*([A-G][#b]?m?)/i);
-          if (tomRegex && tomRegex[1]) tomStr = tomRegex[1].trim();
+      const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec?url=";
 
-          const preEl = doc.querySelector('pre');
-          if (preEl) {
-              preEl.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
+      // Lista de tentativas em cascata (priorizando a rota leve de impressão)
+      const rotas = [
+          googleProxy + encodeURIComponent(printUrl),
+          googleProxy + encodeURIComponent(normalUrl),
+          "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(printUrl),
+          "https://api.allorigins.win/raw?url=" + encodeURIComponent(printUrl),
+          "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(normalUrl),
+          "https://corsproxy.io/?" + encodeURIComponent(printUrl)
+      ];
+
+      let docEncontrado = null;
+      let preEncontrado = null;
+
+      try {
+          for (let rota of rotas) {
+              try {
+                  const controller = new AbortController();
+                  const timeoutId = setTimeout(() => controller.abort(), 6000);
+                  
+                  const response = await fetch(rota, { signal: controller.signal });
+                  clearTimeout(timeoutId);
+                  
+                  if (!response.ok) continue;
+                  
+                  const htmlText = await response.text();
+                  if (!htmlText || htmlText.length < 200) continue;
+
+                  const parser = new DOMParser();
+                  const doc = parser.parseFromString(htmlText, "text/html");
+                  const preEl = doc.querySelector('.cifra_cnt pre, .cifra pre, pre');
+
+                  // Só aceita a resposta se realmente existir a tag <pre> com a cifra dentro
+                  if (preEl && preEl.textContent.trim().length > 20) {
+                      docEncontrado = doc;
+                      preEncontrado = preEl;
+                      break;
+                  }
+              } catch (erroRota) {
+                  // Se uma rota falhar ou der timeout, passa silenciosamente para a próxima
+                  continue;
+              }
+          }
+
+          if (docEncontrado && preEncontrado) {
+              let titleStr = "Nova Música", artistStr = "", tomStr = "", capoStr = "";
               
-              let lines = preEl.textContent.replace(/\r/g, '').split('\n');
+              // Tenta extrair Título e Artista pelos cabeçalhos diretos ou pela tag <title>
+              const h1El = docEncontrado.querySelector('h1.t1, .cifra h1, h1');
+              const h2El = docEncontrado.querySelector('h2.t3, .cifra h2, h2');
+              const pageTitle = docEncontrado.querySelector('title');
+
+              if (h1El && h1El.textContent.trim()) {
+                  titleStr = h1El.textContent.trim();
+                  if (h2El && h2El.textContent.trim()) {
+                      artistStr = h2El.textContent.trim();
+                  }
+              } else if (pageTitle && pageTitle.textContent.includes('-')) {
+                  let parts = pageTitle.textContent.split('-');
+                  if (parts.length >= 2) {
+                      titleStr = parts[0].trim();
+                      artistStr = parts[1].replace(/Cifra Club/i, '').trim();
+                  }
+              }
+              
+              const bodyText = docEncontrado.body.textContent.replace(/[\u200B-\u200D\uFEFF]/g, '');
+              
+              // Extrai o Tom
+              const tomEl = docEncontrado.querySelector('#cifra_tom a, .cifra_tom a');
+              const tomRegex = bodyText.match(/Tom:\s*([A-G][#b]?m?)/i);
+              if (tomEl && tomEl.textContent.trim()) {
+                  tomStr = tomEl.textContent.trim();
+              } else if (tomRegex && tomRegex[1]) {
+                  tomStr = tomRegex[1].trim();
+              }
+
+              // Extrai o Capotraste automaticamente se existir na cifra
+              const capoRegex = bodyText.match(/Capotraste na (\d+)ª casa/i);
+              if (capoRegex && capoRegex[1]) {
+                  capoStr = capoRegex[1].trim();
+              }
+
+              // Limpa elementos indesejados de dentro do <pre>
+              preEncontrado.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
+              
+              // Remove caracteres invisíveis (\u200B) do novo layout do Cifra Club
+              let rawCifra = preEncontrado.textContent.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\r/g, '');
+              let lines = rawCifra.split('\n');
               let newLines = [];
               let inIntroBlock = false;
               let introChords = [];
@@ -1875,6 +1942,7 @@
               document.getElementById('i-title').value = titleStr;
               document.getElementById('i-artist').value = artistStr;
               document.getElementById('i-tone').value = tomStr;
+              if (capoStr) document.getElementById('i-capo').value = capoStr;
               
               document.getElementById('i-intro').value = introChords.join(' ').replace(/\s{2,}/g, ' ').trim();
               
@@ -1882,12 +1950,16 @@
               document.getElementById('i-transpose-val').innerText = '0';
               document.getElementById('i-transpose-val').style.color = '#0284c7';
               
-              saveCurrentSong(); alert("✅ Cifra extraída com sucesso!");
-          } else alert("Não foi possível encontrar a cifra neste link.");
+              saveCurrentSong();
+              alert("✅ Cifra extraída com sucesso!");
+          } else {
+              alert("Não foi possível encontrar a cifra neste link.");
+          }
       } catch (error) {
           alert("O navegador mobile bloqueou a extração direta por segurança. Cole a cifra manualmente na caixa abaixo.");
       } finally {
-          btn.innerHTML = originalText; btn.disabled = false;
+          btn.innerHTML = originalText;
+          btn.disabled = false;
       }
   }
 
@@ -1942,7 +2014,7 @@
               tempDiv.querySelectorAll('.sr-only, [style*="display:none"], [style*="display: none"]').forEach(el => el.remove());
               cleanText = tempDiv.textContent || plain;
           }
-          cleanText = cleanText.replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ').replace(/\r?\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
+          cleanText = cleanText.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ').replace(/\r?\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
           
           const start = this.selectionStart, end = this.selectionEnd;
           this.value = this.value.substring(0, start) + cleanText + this.value.substring(end);
@@ -1964,7 +2036,7 @@
               tempDiv.querySelectorAll('br').forEach(br => { br.parentNode.insertBefore(document.createTextNode('\n'), br); br.remove(); });
               tempDiv.querySelectorAll('div, p, pre, blockquote').forEach(block => block.appendChild(document.createTextNode('\n')));
               
-              let cleanText = (tempDiv.querySelector('pre') ? tempDiv.querySelector('pre').textContent : tempDiv.textContent).replace(/">/g, '').replace(/\u00A0/g, ' ');
+              let cleanText = (tempDiv.querySelector('pre') ? tempDiv.querySelector('pre').textContent : tempDiv.textContent).replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
               
               let lines = cleanText.split(/\r?\n/);
               let cleanedLines = [];
