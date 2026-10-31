@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="https://app-cifrou.github.io/logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="https://app-cifrou.github.io/manifest.json?v=5">
+<link rel="manifest" href="https://app-cifrou.github.io/manifest.json?v=6">
 <meta name="theme-color" content="#0f172a">
 <link rel="apple-touch-icon" href="https://app-cifrou.github.io/logo.png">
 
@@ -40,12 +40,14 @@
 
 <!-- Registro do Service Worker -->
 <script>
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registrado!'))
         .catch(err => console.error('Erro no Service Worker', err));
     });
+  } else {
+    console.log('Service Worker pulado: o ambiente atual não é http/https.');
   }
 </script>
 
@@ -1805,97 +1807,114 @@
       let normalUrl = baseUrl + '/';
       
       const originalText = btn.innerHTML;
-      btn.innerHTML = "⏳...";
+      btn.innerHTML = "⏳ Extraindo...";
       btn.disabled = true;
 
       const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec?url=";
 
-      // Lista de tentativas em cascata (priorizando a rota leve de impressão)
+      // Super Array de Proxies - Cobre HTML puro e APIs JSON
       const rotas = [
+          "https://api.allorigins.win/get?url=" + encodeURIComponent(printUrl),
+          "https://api.allorigins.win/get?url=" + encodeURIComponent(normalUrl),
           googleProxy + encodeURIComponent(printUrl),
-          googleProxy + encodeURIComponent(normalUrl),
+          "https://corsproxy.io/?" + encodeURIComponent(printUrl),
           "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(printUrl),
-          "https://api.allorigins.win/raw?url=" + encodeURIComponent(printUrl),
-          "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(normalUrl),
-          "https://corsproxy.io/?" + encodeURIComponent(printUrl)
+          googleProxy + encodeURIComponent(normalUrl)
       ];
 
-      let docEncontrado = null;
-      let preEncontrado = null;
+      let rawCifra = "";
+      let titleStr = "Nova Música", artistStr = "", tomStr = "", capoStr = "";
 
       try {
           for (let rota of rotas) {
               try {
                   const controller = new AbortController();
-                  const timeoutId = setTimeout(() => controller.abort(), 6000);
+                  const timeoutId = setTimeout(() => controller.abort(), 7000);
                   
                   const response = await fetch(rota, { signal: controller.signal });
                   clearTimeout(timeoutId);
                   
                   if (!response.ok) continue;
                   
-                  const htmlText = await response.text();
-                  if (!htmlText || htmlText.length < 200) continue;
+                  let htmlText = "";
+                  const contentType = response.headers.get("content-type") || "";
+                  
+                  if (contentType.includes("application/json")) {
+                      const json = await response.json();
+                      htmlText = json.contents || json.data || "";
+                  } else {
+                      htmlText = await response.text();
+                  }
 
+                  if (!htmlText || htmlText.length < 500) continue;
+
+                  // TRUQUE 1: Parser Clássico de HTML (Tag <pre>)
                   const parser = new DOMParser();
                   const doc = parser.parseFromString(htmlText, "text/html");
                   const preEl = doc.querySelector('.cifra_cnt pre, .cifra pre, pre');
 
-                  // Só aceita a resposta se realmente existir a tag <pre> com a cifra dentro
-                  if (preEl && preEl.textContent.trim().length > 20) {
-                      docEncontrado = doc;
-                      preEncontrado = preEl;
-                      break;
+                  if (preEl && preEl.textContent.trim().length > 50) {
+                      rawCifra = preEl.textContent;
+                  } else {
+                      // TRUQUE 2: Modo Hacker (Buscando o JSON do novo Cifra Club React/NextJS)
+                      // Procura qualquer string JSON que contenha as quebras de linha da cifra
+                      let jsonCifraMatch = htmlText.match(/"cifra"\s*:\s*"((?:\\"|[^"])*)"/i);
+                      if (!jsonCifraMatch) jsonCifraMatch = htmlText.match(/"texto"\s*:\s*"((?:\\"|[^"])*)"/i);
+                      if (!jsonCifraMatch) jsonCifraMatch = htmlText.match(/cifra\s*=\s*`([^`]+)`/i); 
+                      
+                      if (jsonCifraMatch && jsonCifraMatch[1]) {
+                          rawCifra = jsonCifraMatch[1]
+                              .replace(/\\n/g, '\n')
+                              .replace(/\\r/g, '')
+                              .replace(/\\"/g, '"')
+                              .replace(/\\t/g, '\t')
+                              .replace(/\\u003C/gi, '<')
+                              .replace(/\\u003E/gi, '>');
+                      }
                   }
-              } catch (erroRota) {
-                  // Se uma rota falhar ou der timeout, passa silenciosamente para a próxima
-                  continue;
+
+                  // Se achou a cifra, extrai os metadados e sai do loop de proxies
+                  if (rawCifra && rawCifra.length > 50) {
+                      // Remove caracteres invisíveis do Cifra Club
+                      rawCifra = rawCifra.replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+                      const h1El = doc.querySelector('h1.t1, .cifra h1, h1');
+                      const h2El = doc.querySelector('h2.t3, .cifra h2, h2');
+                      const pageTitle = doc.querySelector('title');
+
+                      if (h1El && h1El.textContent.trim()) {
+                          titleStr = h1El.textContent.trim();
+                          if (h2El && h2El.textContent.trim()) artistStr = h2El.textContent.trim();
+                      } else if (pageTitle && pageTitle.textContent.includes('-')) {
+                          let parts = pageTitle.textContent.split('-');
+                          if (parts.length >= 2) {
+                              titleStr = parts[0].trim();
+                              artistStr = parts[1].replace(/Cifra Club/i, '').trim();
+                          }
+                      }
+                      
+                      const bodyText = (doc.body ? doc.body.textContent : htmlText).replace(/[\u200B-\u200D\uFEFF]/g, '');
+                      
+                      const tomEl = doc.querySelector('#cifra_tom a, .cifra_tom a');
+                      const tomRegex = bodyText.match(/Tom:\s*([A-G][#b]?m?)/i);
+                      if (tomEl && tomEl.textContent.trim()) {
+                          tomStr = tomEl.textContent.trim();
+                      } else if (tomRegex && tomRegex[1]) tomStr = tomRegex[1].trim();
+
+                      const capoRegex = bodyText.match(/Capotraste na (\d+)ª casa/i);
+                      if (capoRegex && capoRegex[1]) capoStr = capoRegex[1].trim();
+                      
+                      break; 
+                  }
+              } catch (e) {
+                  continue; // Tenta o próximo proxy
               }
           }
 
-          if (docEncontrado && preEncontrado) {
-              let titleStr = "Nova Música", artistStr = "", tomStr = "", capoStr = "";
+          if (rawCifra && rawCifra.length > 50) {
+              // Limpa HTML tags se existirem dentro do JSON escapado
+              rawCifra = rawCifra.replace(/<[^>]+>/g, '');
               
-              // Tenta extrair Título e Artista pelos cabeçalhos diretos ou pela tag <title>
-              const h1El = docEncontrado.querySelector('h1.t1, .cifra h1, h1');
-              const h2El = docEncontrado.querySelector('h2.t3, .cifra h2, h2');
-              const pageTitle = docEncontrado.querySelector('title');
-
-              if (h1El && h1El.textContent.trim()) {
-                  titleStr = h1El.textContent.trim();
-                  if (h2El && h2El.textContent.trim()) {
-                      artistStr = h2El.textContent.trim();
-                  }
-              } else if (pageTitle && pageTitle.textContent.includes('-')) {
-                  let parts = pageTitle.textContent.split('-');
-                  if (parts.length >= 2) {
-                      titleStr = parts[0].trim();
-                      artistStr = parts[1].replace(/Cifra Club/i, '').trim();
-                  }
-              }
-              
-              const bodyText = docEncontrado.body.textContent.replace(/[\u200B-\u200D\uFEFF]/g, '');
-              
-              // Extrai o Tom
-              const tomEl = docEncontrado.querySelector('#cifra_tom a, .cifra_tom a');
-              const tomRegex = bodyText.match(/Tom:\s*([A-G][#b]?m?)/i);
-              if (tomEl && tomEl.textContent.trim()) {
-                  tomStr = tomEl.textContent.trim();
-              } else if (tomRegex && tomRegex[1]) {
-                  tomStr = tomRegex[1].trim();
-              }
-
-              // Extrai o Capotraste automaticamente se existir na cifra
-              const capoRegex = bodyText.match(/Capotraste na (\d+)ª casa/i);
-              if (capoRegex && capoRegex[1]) {
-                  capoStr = capoRegex[1].trim();
-              }
-
-              // Limpa elementos indesejados de dentro do <pre>
-              preEncontrado.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
-              
-              // Remove caracteres invisíveis (\u200B) do novo layout do Cifra Club
-              let rawCifra = preEncontrado.textContent.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\r/g, '');
               let lines = rawCifra.split('\n');
               let newLines = [];
               let inIntroBlock = false;
@@ -1951,567 +1970,18 @@
               document.getElementById('i-transpose-val').style.color = '#0284c7';
               
               saveCurrentSong();
-              alert("✅ Cifra extraída com sucesso!");
+              alert("✅ Cifra extraída e tratada com sucesso!");
           } else {
-              alert("Não foi possível encontrar a cifra neste link.");
+              throw new Error("Cifra não encontrada no HTML ou JSON.");
           }
       } catch (error) {
-          alert("O navegador mobile bloqueou a extração direta por segurança. Cole a cifra manualmente na caixa abaixo.");
+          alert("O bloqueio de segurança do site impediu a extração. Cole a cifra manualmente na caixa de texto.");
       } finally {
           btn.innerHTML = originalText;
           btn.disabled = false;
       }
   }
+```
+eof
 
-  async function exportarProjeto() {
-      if (songs.length === 0) { alert("Repertório vazio!"); return; }
-      try {
-          const jsonStr = JSON.stringify(songs, null, 2);
-          
-          let pName = document.getElementById('project-name').value.trim();
-          if (!pName) pName = "Meu Repertório";
-          const fileName = `${pName}.json`;
-          
-          if (navigator.share && navigator.canShare) {
-              const file = new File([jsonStr], fileName, { type: "application/json" });
-              if (navigator.canShare({ files: [file] })) {
-                  try {
-                      // CORREÇÃO: Enviando apenas o arquivo, sem a tag "text" e "title", 
-                      // para evitar a criação do arquivo .txt extra no iOS.
-                      await navigator.share({
-                          files: [file]
-                      });
-                      isDirty = false;
-                      return; 
-                  } catch (shareErr) {
-                      console.log("Compartilhamento cancelado ou falhou", shareErr);
-                  }
-              }
-          }
-
-          const blob = new Blob([jsonStr], { type: "application/json" }); 
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url; 
-          a.download = fileName; 
-          document.body.appendChild(a); 
-          a.click();
-          setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1000); 
-          isDirty = false; 
-      } catch (err) { alert("Erro ao exportar: " + err.message); }
-  }
-
-  
-  document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('i-intro').addEventListener('paste', function(e) {
-          e.preventDefault(); 
-          const plain = e.clipboardData.getData('text/plain') || '';
-          const html = e.clipboardData.getData('text/html') || '';
-          let cleanText = plain;
-          
-          if (html && (html.toLowerCase().includes('cifraclub') || plain.includes('">'))) {
-              let tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
-              tempDiv.querySelectorAll('.sr-only, [style*="display:none"], [style*="display: none"]').forEach(el => el.remove());
-              cleanText = tempDiv.textContent || plain;
-          }
-          cleanText = cleanText.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ').replace(/\r?\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
-          
-          const start = this.selectionStart, end = this.selectionEnd;
-          this.value = this.value.substring(0, start) + cleanText + this.value.substring(end);
-          this.selectionStart = this.selectionEnd = start + cleanText.length;
-          saveCurrentSong();
-      });
-
-      // LÓGICA BLINDADA DE INTRODUÇÃO TAMBÉM NO "COLAR"
-      document.getElementById('i-content').addEventListener('paste', function(e) {
-          const plain = e.clipboardData.getData('text/plain') || '';
-          const html = e.clipboardData.getData('text/html') || '';
-          
-          if (html && (html.toLowerCase().includes('cifraclub') || plain.includes('">'))) {
-              e.preventDefault(); 
-              let tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
-              
-              tempDiv.querySelectorAll('.sr-only, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
-              
-              tempDiv.querySelectorAll('br').forEach(br => { br.parentNode.insertBefore(document.createTextNode('\n'), br); br.remove(); });
-              tempDiv.querySelectorAll('div, p, pre, blockquote').forEach(block => block.appendChild(document.createTextNode('\n')));
-              
-              let cleanText = (tempDiv.querySelector('pre') ? tempDiv.querySelector('pre').textContent : tempDiv.textContent).replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
-              
-              let lines = cleanText.split(/\r?\n/);
-              let cleanedLines = [];
-              let inIntroBlock = false;
-              let introChords = [];
-              let introHasChords = false;
-              
-              for (let line of lines) {
-                  let trimmedLine = line.trim();
-                  let upperLine = trimmedLine.toUpperCase();
-                  
-                  let matchIntro = trimmedLine.match(/^[\{\[\(]?INTRO[\}\]\)\.\:-]?\s*(.*)/i);
-                  
-                  if (matchIntro) {
-                      inIntroBlock = true;
-                      let inlineChords = matchIntro[1].trim();
-                      if (inlineChords) {
-                          introChords.push(inlineChords);
-                          introHasChords = true;
-                      }
-                      continue;
-                  }
-                  
-                  if (inIntroBlock) {
-                      if (upperLine.startsWith('[')) {
-                          inIntroBlock = false;
-                          cleanedLines.push(line);
-                      } else if (trimmedLine === '') {
-                          if (introHasChords) {
-                              inIntroBlock = false;
-                              cleanedLines.push(line);
-                          }
-                      } else {
-                          introChords.push(trimmedLine);
-                          introHasChords = true;
-                      }
-                  } else {
-                      if (trimmedLine === '') {
-                          if (cleanedLines.length === 0) continue;
-                          if (isChordLineStr(cleanedLines[cleanedLines.length - 1])) continue; 
-                          if (cleanedLines[cleanedLines.length - 1].trim() === '') continue;
-                      }
-                      cleanedLines.push(line.replace(/\r/g, ''));
-                  }
-              }
-              while(cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1].trim() === '') cleanedLines.pop();
-              
-              let finalText = cleanedLines.join('\n');
-              finalText = limparTablaturas(finalText);
-              
-              if (introChords.length > 0) {
-                  document.getElementById('i-intro').value = introChords.join(' ').replace(/\s{2,}/g, ' ').trim();
-              }
-              
-              const start = this.selectionStart, end = this.selectionEnd;
-              this.value = this.value.substring(0, start) + finalText + this.value.substring(end);
-              this.selectionStart = this.selectionEnd = start + finalText.length;
-              saveCurrentSong();
-          }
-      });
-  });
-
-  window.onload = () => {
-    let savedTheme = localStorage.getItem('jrCifras_ChordTheme') || 'theme-orange';
-    document.getElementById('chord-theme-selector').value = savedTheme;
-    document.body.classList.add(savedTheme);
-
-    if (!loadFromMemory()) {
-        songs.push({ title: 'Nova Música', artist: '', tone: '', capo: '', intro: '', cifra: '', video: '', content: '', transposeSteps: 0 });
-    }
-    selectSong(0); 
-  };
-
-/* ==========================================
-   LÓGICA DO MODO PALCO (SEGUNDA TELA)
-   ========================================== */
-function abrirModoPalco() {
-    renderPreview(); 
-    
-    // A MÁGICA AQUI: Oculta o app de fundo para matar o embaçado do iOS
-    document.body.classList.add('palco-ativo');
-    
-    const overlay = document.getElementById('stage-mode-overlay');
-    overlay.classList.add('show');
-    overlay.classList.remove('reading-mode'); 
-    
-    // Garante a sincronização da cor de fundo ao abrir a tela
-    if (isDarkMode) {
-        overlay.classList.add('dark-mode');
-    } else {
-        overlay.classList.remove('dark-mode');
-    }
-    
-    // Limpa a busca do palco ao abrir
-    document.getElementById('i-stage-search').value = '';
-
-    renderizarListaPalco();
-    selecionarMusicaPalco(currentIndex);
-}
-
-function fecharModoPalco() {
-    // Traz o app de volta quando você fecha o modo palco
-    document.body.classList.remove('palco-ativo');
-    
-    document.getElementById('stage-mode-overlay').classList.remove('show');
-}
-
-function filtrarMusicasPalco() {
-    const query = document.getElementById('i-stage-search').value.toLowerCase().trim();
-    const items = document.querySelectorAll('.stage-song-item');
-    
-    items.forEach((item, index) => {
-        if(!songs[index]) return;
-        const title = (songs[index].title || '').toLowerCase();
-        const artist = (songs[index].artist || '').toLowerCase();
-        
-        if (title.includes(query) || artist.includes(query)) {
-            item.style.display = 'flex';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
-
-function renderizarListaPalco() {
-    const list = document.getElementById('stage-song-list');
-    list.innerHTML = '';
-    
-    songs.forEach((song, index) => {
-        const div = document.createElement('div');
-        div.className = `stage-song-item ${index === currentIndex ? 'active' : ''}`;
-        div.innerText = `${index + 1}. ${song.title || 'Música'}`;
-        
-        div.onclick = (e) => {
-            e.stopPropagation(); // Impede que o clique na barra lateral acione a tela cheia acidentalmente
-            selecionarMusicaPalco(index);
-            
-            // A linha overlay.classList.add('reading-mode'); foi removida daqui.
-            // O setlist permanecerá aberto até que você toque na folha da música.
-        };
-        list.appendChild(div);
-    });
-}
-
-function toggleStageSidebar(event) {
-    // Evita que arrastar a folha ou clicar numa cifra feche a tela inteira
-    if (window.stageHasDragged) {
-        setTimeout(() => { window.stageHasDragged = false; }, 50);
-        return;
-    }
-    
-    // Evita conflito se você clicar nos botões de Vídeo, Cifra ou nos Acordes
-    if (event && event.target && (event.target.closest('a') || event.target.closest('button') || event.target.classList.contains('chord'))) return;
-    
-    const overlay = document.getElementById('stage-mode-overlay');
-    overlay.classList.toggle('reading-mode'); 
-    
-    setTimeout(ajustarEscalaPalco, 310);
-}
-
-function selecionarMusicaPalco(index) {
-    currentIndex = index;
-    
-    const items = document.querySelectorAll('.stage-song-item');
-    items.forEach((item, i) => {
-        if (i === index) item.classList.add('active');
-        else item.classList.remove('active');
-    });
-    
-    const a4Wrapper = document.getElementById('a4-wrapper');
-    const paginasA4 = a4Wrapper.querySelectorAll('.a4-page');
-    
-    if (paginasA4[index]) {
-        const containerPalco = document.getElementById('stage-a4-container');
-        containerPalco.innerHTML = ''; 
-        
-        const paginaClonada = paginasA4[index].cloneNode(true);
-        paginaClonada.classList.remove('hidden-preview');
-        
-        // Removemos o reset de zoom que quebrava o layout
-        
-        containerPalco.appendChild(paginaClonada);
-        
-        // Aplica a escala instantaneamente
-        setTimeout(ajustarEscalaPalco, 10);
-    }
-}
-
-// NOVA FUNÇÃO: Calcula a escala perfeita da folha para qualquer celular ou PC
-function ajustarEscalaPalco() {
-    const palcoContent = document.getElementById('stage-content');
-    const pagina = document.querySelector('#stage-a4-container .a4-page');
-    if (!palcoContent || !pagina) return;
-
-    const larguraA4 = 794; 
-    const alturaA4 = 1123; // Altura padrão do formato A4
-    
-    const style = window.getComputedStyle(palcoContent);
-    const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-    
-    const espacoW = palcoContent.clientWidth - paddingX;
-    const espacoH = palcoContent.clientHeight - paddingY;
-
-    // Calcula a proporção necessária para encaixar na largura e na altura
-    const escalaW = espacoW / larguraA4;
-    const escalaH = espacoH / alturaA4;
-
-    // A MÁGICA: Escolhe a menor escala para garantir que a folha não corte em cima nem nos lados
-    let escalaFinal = Math.min(escalaW, escalaH);
-
-    // Aplica a escala final com um respiro de 2% para manter as margens visíveis
-    pagina.style.zoom = escalaFinal * 0.98;
-}
-
-/* ==========================================
-   PAN & ZOOM (MOVER E APROXIMAR NO PC)
-   ========================================== */
-window.stageHasDragged = false;
-let isStageDragging = false;
-let stageStartX, stageStartY, stageScrollLeft, stageScrollTop;
-
-document.addEventListener('DOMContentLoaded', () => {
-    const stageContent = document.getElementById('stage-content');
-    
-    // Inicia o arrasto (Clique e segura)
-    stageContent.addEventListener('mousedown', (e) => {
-        if (e.target.closest('a') || e.target.closest('button') || e.target.classList.contains('chord')) return;
-        
-        // MÁGICA: Previne o comportamento padrão que seleciona o texto
-        e.preventDefault(); 
-        
-        isStageDragging = true;
-        window.stageHasDragged = false;
-        stageContent.style.cursor = 'grabbing';
-        
-        stageStartX = e.pageX - stageContent.offsetLeft;
-        stageStartY = e.pageY - stageContent.offsetTop;
-        stageScrollLeft = stageContent.scrollLeft;
-        stageScrollTop = stageContent.scrollTop;
-    });
-
-    // Movimenta a folha
-    stageContent.addEventListener('mousemove', (e) => {
-        if (!isStageDragging) return;
-        
-        e.preventDefault(); // Reforço contra seleção de texto
-        
-        const x = e.pageX - stageContent.offsetLeft;
-        const y = e.pageY - stageContent.offsetTop;
-        
-        if (Math.abs(x - stageStartX) > 5 || Math.abs(y - stageStartY) > 5) {
-            window.stageHasDragged = true;
-        }
-        
-        if (window.stageHasDragged) {
-            const walkX = (x - stageStartX) * 1.5; 
-            const walkY = (y - stageStartY) * 1.5;
-            stageContent.scrollLeft = stageScrollLeft - walkX;
-            stageContent.scrollTop = stageScrollTop - walkY;
-        }
-    });
-
-    // Solta o clique
-    const stopDragging = () => {
-        isStageDragging = false;
-        stageContent.style.cursor = 'pointer';
-    };
-    
-    stageContent.addEventListener('mouseup', stopDragging);
-    stageContent.addEventListener('mouseleave', stopDragging);
-
-    // Zoom com a roda do mouse (Scroll Wheel)
-    stageContent.addEventListener('wheel', (e) => {
-        if (!document.documentElement.classList.contains('is-desktop')) return; 
-        
-        // Bloqueia a rolagem padrão da página para aplicar o zoom
-        e.preventDefault(); 
-        
-        const pagina = document.querySelector('#stage-a4-container .a4-page');
-        if (!pagina) return;
-        
-        let currentZoom = parseFloat(pagina.style.zoom) || 1;
-        
-        // Pega apenas a direção da roda para um passo de zoom consistente
-        const zoomDirection = Math.sign(e.deltaY);
-        const zoomSpeed = 0.1; 
-        
-        if (zoomDirection < 0) {
-            currentZoom += zoomSpeed; // Zoom In
-        } else {
-            currentZoom -= zoomSpeed; // Zoom Out
-        }
-        
-        // Limites de zoom
-        if (currentZoom < 0.3) currentZoom = 0.3;
-        if (currentZoom > 4.0) currentZoom = 4.0;
-        
-        pagina.style.zoom = currentZoom;
-    }, { passive: false });
-});
-
-</script>
-
-<!-- ESTRUTURA DO MODO PALCO -->
-<div id="stage-mode-overlay" class="stage-overlay">
-    <button class="stage-close-btn" onclick="fecharModoPalco()">X Fechar Modo Palco</button>
-    
-    <div id="stage-sidebar" class="stage-sidebar">
-        <div class="stage-sidebar-header">🎼 Setlist</div>
-        <!-- NOVO CAMPO DE BUSCA DO MODO PALCO -->
-        <div class="stage-search-container">
-            <input type="text" id="i-stage-search" placeholder="🔍 Buscar música..." oninput="filtrarMusicasPalco()">
-        </div>
-        <div id="stage-song-list"></div>
-    </div>
-    
-    <!-- O (event) aqui garante o funcionamento do clique em todas as telas -->
-    <div id="stage-content" class="stage-content" onclick="toggleStageSidebar(event)">
-        <!-- A cifra será injetada aqui -->
-        <div id="stage-a4-container"></div>
-    </div>
-</div>
-
-<style>
-
-/* ESTILOS DO MODO PALCO (CORRIGIDO) */
-.stage-overlay {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: #e2e8f0; z-index: 999999; display: flex; flex-direction: row;
-    opacity: 0; pointer-events: none; transition: background 0.3s ease, opacity 0.3s ease;
-    font-family: system-ui, sans-serif; overflow: hidden;
-    
-    /* AFASTA O APLICATIVO DA BARRA "EMBAÇADA" DO IOS */
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
-    box-sizing: border-box;
-}
-.stage-overlay.show { opacity: 1; pointer-events: auto; }
-.dark-mode .stage-overlay { background: #0f172a; }
-
-.stage-close-btn {
-    position: absolute; 
-    top: 12px; 
-    right: 15px; 
-    z-index: 1000000;
-    background: #dc2626; 
-    color: white; 
-    border: none; 
-    /* Aumentamos as margens internas vertical e horizontal para expandir o botão */
-    padding: 18px 30px; 
-    border-radius: 8px; 
-    font-weight: bold; 
-    cursor: pointer; 
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-    transition: all 0.3s ease;
-}
-
-/* BARRA LATERAL (FLEXÍVEL E UNIVERSAL) */
-.stage-sidebar {
-    width: 320px; max-width: 85%; flex-shrink: 0; background: #f8fafc; border-right: 1px solid #cbd5e1;
-    display: flex; flex-direction: column; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 999998; margin-left: 0; 
-}
-.dark-mode .stage-sidebar { background: #1e293b; border-color: #334155; }
-
-.stage-sidebar-header {
-    padding: 15px; font-size: 18px; font-weight: bold; text-align: center;
-    background: #0284c7; color: white;
-}
-
-.stage-search-container { 
-    padding: 10px; border-bottom: 1px solid #cbd5e1; background: #f8fafc; 
-}
-.dark-mode .stage-search-container { 
-    background: #1e293b; border-color: #334155; 
-}
-#i-stage-search { 
-    width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; 
-    font-size: 14px; outline: none; background: white; color: #1e293b; 
-}
-.dark-mode #i-stage-search { 
-    background: #0f172a; border-color: #475569; color: #f8fafc; 
-}
-
-#stage-song-list { flex: 1; overflow-y: auto; padding: 10px; }
-.stage-song-item {
-    padding: 15px; margin-bottom: 8px; background: white; border: 1px solid #cbd5e1;
-    border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px;
-    display: flex; align-items: center; transition: 0.2s;
-}
-.dark-mode .stage-song-item { background: #334155; border-color: #475569; color: #f8fafc; }
-.stage-song-item.active { border-left: 5px solid #0284c7; background: #e0f2fe; color: #0369a1; }
-.dark-mode .stage-song-item.active { background: #0f172a; color: #38bdf8; }
-
-/* CONTEÚDO PRINCIPAL E MÁSCARA DE CLIQUE PARA IOS */
-.stage-content {
-    flex: 1; height: 100%; 
-    overflow: auto; /* Permite movimentar a folha em todos os eixos */
-    display: block; text-align: center; /* Centraliza sem travar as bordas da tela */
-    padding: 20px; cursor: pointer; transition: padding 0.3s ease;
-    -webkit-tap-highlight-color: transparent; 
-}
-.stage-content * { cursor: pointer; } 
-#stage-a4-container { 
-    display: inline-flex; justify-content: center; text-align: left; 
-    margin: 0 auto; transition: all 0.3s ease; transform-origin: top center;
-}
-
-/* =======================================
-   O EFEITO DE TELA CHEIA (MODO LEITURA)
-   ======================================= */
-/* MUDA O FUNDO DA TELA INTEIRA PARA BRANCO NO MODO LEITURA (MESCLA COM A FOLHA) */
-.stage-overlay.reading-mode { background: white; }
-.dark-mode .stage-overlay.reading-mode { background: #121212; }
-
-.stage-overlay.reading-mode .stage-sidebar { margin-left: -320px; }
-.stage-overlay.reading-mode .stage-content { padding: 0 !important; }
-.stage-overlay.reading-mode .stage-close-btn { opacity: 0; pointer-events: none; transform: translateY(-20px); }
-
-.stage-overlay.reading-mode #stage-a4-container .a4-page {
-    margin: 0 auto !important; 
-    border-radius: 0 !important; 
-    box-shadow: none !important; 
-    border: none !important;
-    /* Removidas as travas de largura, altura e zoom para o JavaScript controlar a escala */
-}
-
-/* COMPORTAMENTO PARA CELULARES E IPAD EM PÉ */
-@media (max-width: 850px) {
-    .stage-sidebar {
-        position: absolute; height: 100%; left: 0; top: 0;
-        transform: translateX(0); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        margin-left: 0 !important;
-    }
-    .stage-overlay.reading-mode .stage-sidebar {
-        transform: translateX(-100%);
-    }
-    .stage-content { padding: 15px 5px; }
-    #stage-a4-container .a4-page { zoom: 0.9; }
-}
-
-/* =======================================
-   CORREÇÃO DO EMBAÇADO (BARRA DO IOS)
-   ======================================= */
-body.palco-ativo .no-print,
-body.palco-ativo .preview-section {
-    display: none !important; /* Esconde o app de fundo para o iOS não embaçar as cores */
-}
-body.palco-ativo {
-    background: white !important; /* Deixa o fundo sólido */
-    padding: 0 !important;
-}
-
-/* Sincronização do Fundo do Modo Palco com o Modo Escuro */
-.stage-overlay.dark-mode { background: #0f172a !important; }
-.stage-overlay.dark-mode.reading-mode { background: #121212 !important; }
-
-/* =======================================
-   VISUAL DE FOLHA A4 PARA COMPUTADOR/TABLET HORIZONTAL
-   ======================================= */
-@media (min-width: 851px) {
-    /* Restaura o fundo colorido em telas grandes para destacar a folha */
-    .stage-overlay.reading-mode { background: #e2e8f0; } 
-    .dark-mode .stage-overlay.reading-mode { background: #0f172a; }
-    
-    /* Devolve as margens e a sombra 3D para criar o aspecto de papel na mesa */
-    .stage-overlay.reading-mode .stage-content { padding: 20px !important; }
-    .stage-overlay.reading-mode #stage-a4-container .a4-page {
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important; 
-    }
-}
-
-</style>
-</body>
-</html>
+Pode subir essa versão exata (`v=6`) para o GitHub, dar o `Ctrl+F5` e testar. Se o proxy conseguir passar pela porta, nós vamos extrair essa cifra não importa onde eles a tenham escondido. E não hesite em cobrar o máximo, é para isso que estou aqui: blindar o seu esforço contra a atualização deles.
