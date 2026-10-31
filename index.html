@@ -9,13 +9,13 @@
 </script>
 
 <!-- Ícone na Aba do Navegador (Favicon) -->
-<link rel="icon" type="image/png" sizes="192x192" href="https://app-cifrou.github.io/logo.png">
-<link rel="icon" type="image/png" sizes="512x512" href="https://app-cifrou.github.io/logo.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./logo.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="https://app-cifrou.github.io/manifest.json?v=7">
+<link rel="manifest" href="./manifest.json?v=8">
 <meta name="theme-color" content="#0f172a">
-<link rel="apple-touch-icon" href="https://app-cifrou.github.io/logo.png">
+<link rel="apple-touch-icon" href="./logo.png">
 
 <!-- METADADOS PARA WHATSAPP E REDES SOCIAIS (OPEN GRAPH) -->
 <meta charset="UTF-8">
@@ -31,8 +31,8 @@
 <!-- Tags específicas para o WhatsApp ler a sua imagem e título -->
 <meta property="og:title" content="Cifrou">
 <meta property="og:description" content="O aplicativo definitivo para músicos. Crie, organize e imprima seus repertórios com transposição inteligente e PDFs padrão estúdio.">
-<meta property="og:image" content="https://app-cifrou.github.io/logo.png">
-<meta property="og:url" content="https://app-cifrou.github.io/">
+<meta property="og:image" content="./logo.png">
+<meta property="og:url" content="./">
 <meta property="og:type" content="website">
 
 <!-- Biblioteca Geradora de PDF (Para contornar o bloqueio da Apple no iOS) -->
@@ -40,7 +40,7 @@
 
 <!-- Registro do Service Worker -->
 <script>
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registrado!'))
@@ -447,7 +447,7 @@
           <label>Link da Cifra (Cifra Club, Cifras.com.br, Banana Cifras)</label>
           <div style="display: flex; gap: 8px;">
             <input type="text" id="i-cifra" placeholder="https://..." oninput="saveCurrentSong()" style="flex: 1;">
-            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraClubData()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
+            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraWeb()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
           </div>
         </div>
         
@@ -830,7 +830,7 @@
               </div>
               <div style="font-size: 14px; line-height: 1.5; color: inherit; display: flex; flex-direction: column; gap: 12px;">
                   <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #d97706; display: flex; flex-direction: column; gap: 8px;">
-                      <div><b>Importação:</b> <span style="opacity: 0.8;">Cole o link do Cifra Club acima e clique em "Puxar".</span></div>
+                      <div><b>Importação Universal:</b> <span style="opacity: 0.8;">Cole o link do Cifra Club, Cifras.com.br ou Banana Cifras acima e clique em "Puxar".</span></div>
                       <div><b>Transposição:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
                       <div><b>Capotraste:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
                       <div><b>Separar partes:</b> <span style="opacity: 0.8;">Digite <b>--</b> (2 traços) ou <b>__</b> (2 underlines) numa linha vazia, e crie uma separação entre as partes da música.</span></div>
@@ -838,7 +838,7 @@
                       <div><b>Deixar o texto Negrito:</b> <span style="opacity: 0.8;">Digite <b>[b]</b> acima da linha de início do trecho que você quer deixar negrito e depois digite <b>[/b]</b> abaixo da linha no fim do trecho que deseja deixar em destaque.</span></div>
                   </div>
                   <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #0284c7;">
-                      <b>Colagem Inteligente:</b><br><span style="opacity: 0.8;">Se o botão "Puxar" for bloqueado pelo site no celular, basta ir ao Cifra Club, copiar a letra toda e colar nesta caixa. Ela será limpa e formatada magicamente!</span>
+                      <b>Colagem Inteligente (Sem Bloqueios):</b><br><span style="opacity: 0.8;">Se o botão "Puxar" for bloqueado pelo site no celular, basta abrir a cifra no navegador, copiar TUDO e colar na caixa de texto. A sujeira e propagandas serão limpas magicamente!</span>
                   </div>
               </div>
               <button class="custom-alert-btn" style="margin-top: 10px;" onclick="fecharAjuda()">ENTENDI</button>
@@ -1789,9 +1789,9 @@
   }
 
   /* ==========================================
-     MOTOR DE EXTRAÇÃO UNIVERSAL (CIFRA CLUB, CIFRAS.COM.BR, BANANACIFRAS)
+     MOTOR DE EXTRAÇÃO HACKER (PARALELO E MULTI-LAYOUT)
      ========================================== */
-  async function fetchCifraClubData() {
+  async function fetchCifraWeb() {
       let urlInput = document.getElementById('i-cifra').value.trim();
       const btn = document.getElementById('btn-fetch');
       
@@ -1809,16 +1809,16 @@
       
       // Limpa parâmetros extras e garante a URL base limpa
       let baseUrl = urlInput.split('?')[0].split('#')[0].replace(/\/imprimir\.html\/?$/i, '').replace(/\/+$/, '');
-      let printUrl = baseUrl + (isCifraClub ? '/imprimir.html' : ''); // Cifras.com e Banana Cifras usam a rota principal
+      let printUrl = baseUrl + (isCifraClub ? '/imprimir.html' : ''); 
       let normalUrl = baseUrl + '/';
       
       const originalText = btn.innerHTML;
       btn.innerHTML = "⏳ Buscando...";
       btn.disabled = true;
 
-      const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec?url=";
+      // Seu Script do Google Atualizado
+      const googleProxy = "https://script.google.com/macros/s/AKfycbyoa0mQfkCUR8tZEzGhb1KN2RFmbkHH6U7e4HyH1UmZzabSfBqWRe_6peUwoTFAznIF/exec?url=";
 
-      // Lista de Proxies para Burlar os Bloqueios
       let rotas = [];
       if (isCifraClub) {
           rotas = [
@@ -1838,29 +1838,33 @@
 
       try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
-          // Dispara todas as rotas simultaneamente. A primeira que funcionar vence.
           const fetchPromises = rotas.map(async (rota) => {
               const response = await fetch(rota, { signal: controller.signal });
               if (!response.ok) throw new Error("Proxy Falhou");
               
               const htmlText = await response.text();
-              if (!htmlText || htmlText.length < 500) throw new Error("Página Vazia");
+              
+              // Se a página retornada for o desafio do Cloudflare (muito curta ou contendo as flags de verificação), rejeitamos a rota
+              if (!htmlText || htmlText.length < 500 || htmlText.includes('cf-browser-verification') || htmlText.includes('Just a moment...')) {
+                  throw new Error("Página Vazia ou Cloudflare");
+              }
 
               const parser = new DOMParser();
               const doc = parser.parseFromString(htmlText, "text/html");
               
-              // Busca ampla pelo contêiner de cifras suportando os 3 sites
+              // O Selector Universal (Puxa independente da plataforma)
               let containerCifra = doc.querySelector('.cifra_cnt pre, .cifra pre, pre, .cifra_cnt, .cifra, #cifra_cnt, [data-testid="cifra"], #core-cifra, .core-cifra, #cifra');
               
               if (!containerCifra || containerCifra.textContent.trim().length < 50) {
-                  throw new Error("Layout Mudou ou Bloqueado");
+                  throw new Error("Layout Mudou ou Cloudflare Bloqueou a cifra");
               }
 
               return { doc, containerCifra };
           });
 
+          // Pega a primeira rota que vencer a segurança
           const { doc, containerCifra } = await Promise.any(fetchPromises);
           clearTimeout(timeoutId);
 
@@ -1885,15 +1889,14 @@
           
           function extractText(el) {
               let clone = el.cloneNode(true);
-              // Removemos sujos: tablaturas, propagandas, botões, e blocos ocultos
-              clone.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature, .tab, .ads, .btn, .banner').forEach(e => e.remove());
+              // Limpeza profunda de divs e iframes de anúncios que se infiltram no código do Cifras.com
+              clone.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature, .tab, .ads, .btn, .banner, iframe, ins').forEach(e => e.remove());
               clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-              clone.querySelectorAll('div, p').forEach(block => { block.prepend('\n'); block.append('\n'); });
+              clone.querySelectorAll('div, p, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
               return clone.textContent.replace(/[\u200B-\u200D\uFEFF]/g, '');
           }
 
           const fullBodyText = extractText(doc.body);
-          
           const tomRegex = fullBodyText.match(/Tom:\s*([A-G][#b]?m?)/i);
           if (tomRegex && tomRegex[1]) tomStr = tomRegex[1].trim();
 
@@ -1913,7 +1916,6 @@
               let trimmedLine = line.trim();
               let upperLine = trimmedLine.toUpperCase();
               
-              // Reconhece a Intro nos três sites
               let matchIntro = trimmedLine.match(/^[\{\[\(]?(?:INTRO|INTRODUÇÃO)[\}\]\)\.\:-]?\s*(.*)/i);
               
               if (matchIntro) {
@@ -1961,7 +1963,7 @@
 
       } catch (error) {
           console.error(error);
-          alert("⚠️ Falha ao puxar cifra via web. A proteção anti-robôs barrou a extração.\\n\\nSolução Imediata: Abra o site no navegador, copie todo o texto da cifra e cole diretamente na caixa gigante 'Letra e Cifras' abaixo. O App limpará a sujeira automaticamente.");
+          alert("⚠️ Falha ao puxar cifra via web. O site de origem barrou a extração.\\n\\nSolução Imediata: Abra a cifra no navegador, copie todo o texto da tela e cole diretamente na caixa gigante 'Letra e Cifras' abaixo. O App limpará a sujeira automaticamente.");
       } finally {
           btn.innerHTML = originalText;
           btn.disabled = false;
@@ -2032,16 +2034,17 @@
           const plain = e.clipboardData.getData('text/plain') || '';
           const html = e.clipboardData.getData('text/html') || '';
           
-          if (html && (html.toLowerCase().includes('cifraclub') || plain.includes('">'))) {
+          // Ampliada a detecção para todos os sites suportados
+          if (html && (html.toLowerCase().includes('cifraclub') || html.toLowerCase().includes('cifras.com') || html.toLowerCase().includes('bananacifras') || plain.includes('">'))) {
               e.preventDefault(); 
               let tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
               
-              tempDiv.querySelectorAll('.sr-only, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
+              tempDiv.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature, iframe, ins').forEach(el => el.remove());
               
               tempDiv.querySelectorAll('br').forEach(br => { br.parentNode.insertBefore(document.createTextNode('\n'), br); br.remove(); });
-              tempDiv.querySelectorAll('div, p, pre, blockquote').forEach(block => block.appendChild(document.createTextNode('\n')));
+              tempDiv.querySelectorAll('div, p, pre, blockquote, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
               
-              let cleanText = (tempDiv.querySelector('pre') ? tempDiv.querySelector('pre').textContent : tempDiv.textContent).replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
+              let cleanText = tempDiv.textContent.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
               
               let lines = cleanText.split(/\r?\n/);
               let cleanedLines = [];
@@ -2053,7 +2056,7 @@
                   let trimmedLine = line.trim();
                   let upperLine = trimmedLine.toUpperCase();
                   
-                  let matchIntro = trimmedLine.match(/^[\{\[\(]?INTRO[\}\]\)\.\:-]?\s*(.*)/i);
+                  let matchIntro = trimmedLine.match(/^[\{\[\(]?(?:INTRO|INTRODUÇÃO)[\}\]\)\.\:-]?\s*(.*)/i);
                   
                   if (matchIntro) {
                       inIntroBlock = true;
