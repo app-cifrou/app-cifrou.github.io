@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="https://app-cifrou.github.io/logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="https://app-cifrou.github.io/manifest.json?v=6">
+<link rel="manifest" href="https://app-cifrou.github.io/manifest.json?v=7">
 <meta name="theme-color" content="#0f172a">
 <link rel="apple-touch-icon" href="https://app-cifrou.github.io/logo.png">
 
@@ -447,7 +447,7 @@
           <label>Link da Cifra (Cifra Club, Cifras.com.br, Banana Cifras)</label>
           <div style="display: flex; gap: 8px;">
             <input type="text" id="i-cifra" placeholder="https://..." oninput="saveCurrentSong()" style="flex: 1;">
-            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraWeb()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
+            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraClubData()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
           </div>
         </div>
         
