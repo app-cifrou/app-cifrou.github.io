@@ -1191,12 +1191,13 @@
   });
 
   function isChord(w) {
+      let cleanW = w.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
       const chordRegex = /^[A-G](#|b)?(m|M|maj|min|dim|aug|sus|add)?\d*(M|m)?\d*(\([^)]+\))?(º|°|\+|-)?(\/[A-G](#|b)?)?$/;
-      return chordRegex.test(w);
+      return chordRegex.test(cleanW);
   }
 
   function isChordLineStr(line) {
-      const trimmed = line.trim();
+      const trimmed = line.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').trim();
       if (!trimmed || trimmed.startsWith('[')) return false; 
       const words = trimmed.split(/\s+/);
       const chords = words.filter(isChord);
@@ -1248,6 +1249,7 @@
 
   function parseChords(text, steps = 0) {
     if (!text) return '';
+    text = text.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
     let globalIsBold = false; 
     const lines = text.split('\n');
     let blocks = [];
@@ -1667,7 +1669,8 @@
       
       let introHtml = '';
       if (song.intro && song.intro.trim() !== '') {
-          let transposedIntro = transposeLineText(song.intro.replace(/^\[?Intro\]?:?\s*/i, '').trim(), song.transposeSteps || 0);
+          let cleanIntro = song.intro.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '').trim();
+          let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0);
           let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
               return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
           });
@@ -1748,7 +1751,7 @@
       intro: document.getElementById('i-intro').value, 
       cifra: document.getElementById('i-cifra').value,
       video: document.getElementById('i-video').value, 
-      content: document.getElementById('i-content').value, 
+      content: document.getElementById('i-content').value.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, ''), 
       transposeSteps: songs[currentIndex].transposeSteps || 0
     };
     
@@ -1804,7 +1807,7 @@
       btn.disabled = true;
 
       try {
-          const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec";
+          const googleProxy = "https://script.google.com/macros/s/AKfycbyoa0mQfkCUR8tZEzGhb1KN2RFmbkHH6U7e4HyH1UmZzabSfBqWRe_6peUwoTFAznIF/exec";
           const finalUrl = googleProxy + "?url=" + encodeURIComponent(urlInput);
           
           const response = await fetch(finalUrl);
@@ -1822,14 +1825,14 @@
               if (parts.length >= 2) { titleStr = parts[0].trim(); artistStr = parts[1].trim(); }
           }
           
-          const tomRegex = doc.body.textContent.match(/Tom:\s*([A-G][#b]?m?)/i);
+          const tomRegex = doc.body.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').match(/Tom:\s*([A-G][#b]?m?)/i);
           if (tomRegex && tomRegex[1]) tomStr = tomRegex[1].trim();
 
           const preEl = doc.querySelector('pre');
           if (preEl) {
               preEl.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
               
-              let lines = preEl.textContent.replace(/\r/g, '').split('\n');
+              let lines = preEl.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/\r/g, '').split('\n');
               let newLines = [];
               let inIntroBlock = false;
               let introChords = [];
@@ -1942,7 +1945,7 @@
               tempDiv.querySelectorAll('.sr-only, [style*="display:none"], [style*="display: none"]').forEach(el => el.remove());
               cleanText = tempDiv.textContent || plain;
           }
-          cleanText = cleanText.replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ').replace(/\r?\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
+          cleanText = cleanText.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ').replace(/\r?\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
           
           const start = this.selectionStart, end = this.selectionEnd;
           this.value = this.value.substring(0, start) + cleanText + this.value.substring(end);
@@ -1964,7 +1967,7 @@
               tempDiv.querySelectorAll('br').forEach(br => { br.parentNode.insertBefore(document.createTextNode('\n'), br); br.remove(); });
               tempDiv.querySelectorAll('div, p, pre, blockquote').forEach(block => block.appendChild(document.createTextNode('\n')));
               
-              let cleanText = (tempDiv.querySelector('pre') ? tempDiv.querySelector('pre').textContent : tempDiv.textContent).replace(/">/g, '').replace(/\u00A0/g, ' ');
+              let cleanText = (tempDiv.querySelector('pre') ? tempDiv.querySelector('pre').textContent : tempDiv.textContent).replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
               
               let lines = cleanText.split(/\r?\n/);
               let cleanedLines = [];
