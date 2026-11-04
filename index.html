@@ -9,13 +9,13 @@
 </script>
 
 <!-- Ícone na Aba do Navegador (Favicon) -->
-<link rel="icon" type="image/png" sizes="192x192" href="https://app-cifrou.github.io/logo.png">
-<link rel="icon" type="image/png" sizes="512x512" href="https://app-cifrou.github.io/logo.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./logo.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="https://app-cifrou.github.io/manifest.json?v=5">
+<link rel="manifest" href="./manifest.json?v=10">
 <meta name="theme-color" content="#0f172a">
-<link rel="apple-touch-icon" href="https://app-cifrou.github.io/logo.png">
+<link rel="apple-touch-icon" href="./logo.png">
 
 <!-- METADADOS PARA WHATSAPP E REDES SOCIAIS (OPEN GRAPH) -->
 <meta charset="UTF-8">
@@ -31,8 +31,8 @@
 <!-- Tags específicas para o WhatsApp ler a sua imagem e título -->
 <meta property="og:title" content="Cifrou">
 <meta property="og:description" content="O aplicativo definitivo para músicos. Crie, organize e imprima seus repertórios com transposição inteligente e PDFs padrão estúdio.">
-<meta property="og:image" content="https://app-cifrou.github.io/logo.png">
-<meta property="og:url" content="https://app-cifrou.github.io/">
+<meta property="og:image" content="./logo.png">
+<meta property="og:url" content="./">
 <meta property="og:type" content="website">
 
 <!-- Biblioteca Geradora de PDF (Para contornar o bloqueio da Apple no iOS) -->
@@ -40,7 +40,7 @@
 
 <!-- Registro do Service Worker -->
 <script>
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registrado!'))
@@ -422,11 +422,14 @@
   <div class="songs-container">
     
     <div class="sidebar-wrapper">
-      <!-- BARRA DE FERRAMENTAS: BUSCA, ORDENAÇÃO E NOVA MÚSICA -->
+      <!-- BARRA DE FERRAMENTAS: BUSCA, ORDENAÇÃO, NOVA E DUPLICAR MÚSICA -->
       <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; gap: 8px;">
               <button class="btn-primary" style="flex: 1; padding: 10px; font-size: 14px;" onclick="addNewSong()">➕ Nova</button>
+              
+              <!-- NOVO BOTÃO DE DUPLICAR AQUI -->
+              <button class="btn-primary" style="flex: 1; padding: 10px; font-size: 14px; background: #64748b;" onclick="duplicateSong()" title="Duplicar música selecionada">📄 Duplicar</button>
               
               <select id="i-sort" onchange="sortSongs()" style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white; cursor: pointer;">
                   <option value="manual">↕️ Ordenar</option>
@@ -444,6 +447,14 @@
     <div class="editor-panel" id="editor-panel">
       <div class="grid">
         <div class="form-group" style="grid-column: span 2;">
+          <label>Link da Cifra (Cifra Club, Cifras.com.br, Banana Cifras)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="i-cifra" placeholder="https://..." oninput="saveCurrentSong()" style="flex: 1;">
+            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraWeb()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
           <label>Música</label>
           <input type="text" id="i-title" oninput="saveCurrentSong()">
         </div>
@@ -451,14 +462,6 @@
         <div class="form-group">
           <label>Artista / Ocasião</label>
           <input type="text" id="i-artist" oninput="saveCurrentSong()">
-        </div>
-        
-        <div class="form-group" style="grid-column: span 2;">
-          <label>Link Cifra (Ex: Cifra Club)</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="i-cifra" placeholder="https://cifraclub.com.br..." oninput="saveCurrentSong()" style="flex: 1;">
-            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraClubData()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
-          </div>
         </div>
         
         <!-- CAMPO DE VÍDEO COM PLAYER EMBUTIDO -->
@@ -960,6 +963,28 @@
   async function checkUnsaved() {
       if (!isDirty) return true;
       return await window.customConfirm("Você tem alterações recentes que ainda não foram Exportadas. Se continuar, o que está na tela será apagado. Deseja continuar?");
+  }
+
+  function addNewSong() {
+    songs.push({ title: 'Nova Música', artist: '', tone: '', capo: '', intro: '', cifra: '', video: '', content: '', transposeSteps: 0 }); 
+    selectSong(songs.length - 1);
+    autoSaveToMemory()
+  }
+
+  function duplicateSong() {
+    if (songs.length === 0) return;
+    saveCurrentSong(); // Garante que qualquer texto não salvo seja guardado antes da cópia
+    
+    const songToCopy = songs[currentIndex];
+    const newSong = JSON.parse(JSON.stringify(songToCopy)); // Deep copy completa
+    newSong.title = newSong.title + " (Cópia)"; 
+    
+    // Insere exatamente abaixo da música atual
+    songs.splice(currentIndex + 1, 0, newSong);
+    
+    // Seleciona a cópia criada
+    selectSong(currentIndex + 1);
+    autoSaveToMemory();
   }
 
   async function novoProjeto() {
@@ -1773,21 +1798,6 @@
       valEl.style.color = steps !== 0 ? '#dc2626' : '#0284c7';
       renderSongList(); renderPreview();
       autoSaveToMemory()
-  }
-
-  function addNewSong() {
-    songs.push({ title: 'Nova Música', artist: '', tone: '', capo: '', intro: '', cifra: '', video: '', content: '', transposeSteps: 0 }); 
-    selectSong(songs.length - 1);
-    autoSaveToMemory()
-  }
-
-  function deleteSong(index) {
-    if (songs.length === 1) { alert("O repertório precisa ter pelo menos uma música."); return; }
-    songs.splice(index, 1);
-    if (currentIndex >= index && currentIndex > 0) currentIndex--;
-    if (currentIndex >= songs.length) currentIndex = songs.length - 1;
-    selectSong(currentIndex);
-    autoSaveToMemory()
   }
 
   /* ==========================================
