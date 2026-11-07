@@ -205,7 +205,7 @@
 
   .doc-body { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; padding-bottom: 0; overflow: hidden; } 
   .cifra-content { font-family: 'Roboto Mono', monospace; font-size: 10pt; line-height: 1.2; white-space: pre; color: #000000; overflow: visible; -webkit-text-size-adjust: none; text-size-adjust: none; width: 100%; }
-  hr.divider { border: 0; border-top: 2px solid #000000; margin: 10px 0 20px 0; }
+  hr.divider { border: 0; border-top: 2px solid #000000; margin: 12px 0; width: 100%; }
   .split-block { display: flex; width: 100%; gap: 15px; margin-bottom: 2px; }
   .split-col { flex: 1; }
   
@@ -1296,27 +1296,29 @@
     text = text.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
     let globalIsBold = false; 
     const lines = text.split('\n');
-    let blocks = [];
-    let currentBlock = [];
-    
-    for (let line of lines) {
-        if (line.trim().match(/^_{2,}$/) || line.trim().match(/^-{2,}$/)) {
-            if (currentBlock.length > 0) { blocks.push(currentBlock); currentBlock = []; }
-            blocks.push(line.trim());
-        } else currentBlock.push(line);
-    }
-    if (currentBlock.length > 0) blocks.push(currentBlock);
 
     function processLines(linesArray) {
         while(linesArray.length > 0 && linesArray[0].trim() === '') linesArray.shift();
         while(linesArray.length > 0 && linesArray[linesArray.length - 1].trim() === '') linesArray.pop();
         let out = '';
-        for (let line of linesArray) {
-            let currentLine = line.replace(/\s+$/, ''); 
+        for (let i = 0; i < linesArray.length; i++) {
+            let currentLine = linesArray[i].replace(/\s+$/, ''); 
             const trimmed = currentLine.trim();
             
             if (trimmed.toLowerCase() === '[b]') { globalIsBold = true; continue; }
             if (trimmed.toLowerCase() === '[/b]') { globalIsBold = false; continue; }
+            
+            // Agora a linha divisória é processada individualmente dentro de cada coluna ou bloco
+            if (trimmed.match(/^_{2,}$/) || trimmed.match(/^-{2,}$/)) {
+                out = out.replace(/\n+$/, ''); // Remove quebras extras antes da linha para manter o espaçamento limpo
+                out += '<hr class="divider">';
+                // Pula linhas vazias logo após o traço para não duplicar o espaço em branco
+                while (i + 1 < linesArray.length && linesArray[i + 1].trim() === '') {
+                    i++;
+                }
+                continue;
+            }
+            
             if (!trimmed) { out += '\n'; continue; } 
             
             let isChordLine = isChordLineStr(currentLine);
@@ -1334,21 +1336,20 @@
         return out;
     }
 
+    let splitIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === '|' || lines[i].trim() === '||') { splitIndex = i; break; }
+    }
+    
     let html = '';
-    for (let block of blocks) {
-        if (typeof block === 'string') { html += '<hr class="divider">'; continue; }
-        let splitIndex = -1;
-        for (let i = 0; i < block.length; i++) {
-            if (block[i].trim() === '|' || block[i].trim() === '||') { splitIndex = i; break; }
-        }
-        
-        if (splitIndex !== -1) {
-            html += '<div class="split-block">';
-            html += '  <div class="split-col">' + processLines(block.slice(0, splitIndex)) + '</div>';
-            html += '  <div class="split-col-divider"></div>';
-            html += '  <div class="split-col">' + processLines(block.slice(splitIndex + 1)) + '</div>';
-            html += '</div>';
-        } else html += processLines(block);
+    if (splitIndex !== -1) {
+        html += '<div class="split-block">';
+        html += '  <div class="split-col">' + processLines(lines.slice(0, splitIndex)) + '</div>';
+        html += '  <div class="split-col-divider"></div>';
+        html += '  <div class="split-col">' + processLines(lines.slice(splitIndex + 1)) + '</div>';
+        html += '</div>';
+    } else {
+        html += processLines(lines);
     }
     return html;
   }
