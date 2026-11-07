@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="./manifest.json?v=14">
+<link rel="manifest" href="./manifest.json?v=16">
 <meta name="theme-color" content="#0f172a">
 <link rel="apple-touch-icon" href="./logo.png">
 
@@ -168,7 +168,7 @@
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
   .form-group { display: flex; flex-direction: column; gap: 4px; }
   .form-group label { font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; }
-  .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px;}
+  .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px;}
   
   .transpose-controls { display: flex; align-items: center; gap: 6px; }
   .transpose-val { font-weight: bold; font-size: 16px; width: 30px; text-align: center; color: #0284c7; }
@@ -196,8 +196,8 @@
   .a4-content-area { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
   .doc-title { font-size: 22pt !important; font-weight: 800; text-transform: uppercase; line-height: 1.1; color: #000; word-wrap: break-word; white-space: normal; margin: 0; }
   
-  /* CORREÇÃO DO ESPAÇAMENTO ARTISTA/TOM */
-  .meta-left { font-size: 13pt !important; font-weight: 600; color: #475569; line-height: 1.4; }
+  /* CORREÇÃO DEFINITIVA DO ALINHAMENTO DO TOM E ARTISTA NA MESMA LINHA SEM SOBREPOR */
+  .meta-left { font-size: 13pt !important; font-weight: 600; color: #475569; line-height: 1.4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; row-gap: 4px; }
   
   .badge { color: white !important; text-decoration: none; font-size: 9pt; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block !important; }
   .badge.video { background: #dc2626 !important; }
@@ -452,6 +452,7 @@
           <label>Link da Cifra (Cifra Club, Cifras.com.br, Banana Cifras)</label>
           <div style="display: flex; gap: 8px;">
             <input type="text" id="i-cifra" placeholder="https://..." oninput="saveCurrentSong()" style="flex: 1;">
+            <!-- O NOME DA FUNÇÃO FOI CORRIGIDO ABAIXO: -->
             <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraWeb()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
           </div>
         </div>
@@ -487,11 +488,12 @@
           <label>Capotraste</label>
           <input type="number" id="i-capo" placeholder="Ex: 3" oninput="saveCurrentSong()">
         </div>
-        
-        <div class="form-group">
-          <label>Intro</label>
-          <input type="text" id="i-intro" placeholder="Ex: G D Em C" oninput="saveCurrentSong()">
-        </div>
+      </div>
+
+      <!-- NOVO CAMPO INTRO MULTI-LINHA OCUPANDO TELA TODA -->
+      <div class="form-group">
+        <label>Intro (Aperte Enter para separar linhas longas)</label>
+        <textarea id="i-intro" placeholder="Ex: G D Em C&#10;C D G" oninput="saveCurrentSong()" style="height: 65px; font-family: monospace; resize: vertical;"></textarea>
       </div>
       
       <div class="text-areas">
@@ -975,16 +977,11 @@
 
   function duplicateSong() {
     if (songs.length === 0) return;
-    saveCurrentSong(); // Garante que qualquer texto não salvo seja guardado antes da cópia
-    
+    saveCurrentSong(); 
     const songToCopy = songs[currentIndex];
-    const newSong = JSON.parse(JSON.stringify(songToCopy)); // Deep copy completa
+    const newSong = JSON.parse(JSON.stringify(songToCopy)); 
     newSong.title = newSong.title + " (Cópia)"; 
-    
-    // Insere exatamente abaixo da música atual
     songs.splice(currentIndex + 1, 0, newSong);
-    
-    // Seleciona a cópia criada
     selectSong(currentIndex + 1);
     autoSaveToMemory();
   }
@@ -1704,13 +1701,28 @@
       
       let introHtml = '';
       if (song.intro && song.intro.trim() !== '') {
-          let cleanIntro = song.intro.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '').trim();
+          let cleanIntroLines = song.intro.split('\n');
+          let processedIntroLines = [];
           
-          let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0);
-          let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
-              return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
-          });
-          introHtml = `[Intro] ${colorizedIntro}\n\n`;
+          for (let i = 0; i < cleanIntroLines.length; i++) {
+              let cleanIntro = cleanIntroLines[i].replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '');
+              
+              if (cleanIntro.trim() === '') continue; // Ignora se o usuário der um "Enter" em branco sem querer
+              
+              let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0);
+              let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
+                  return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
+              });
+              
+              if (processedIntroLines.length === 0) {
+                  processedIntroLines.push(`[Intro] ${colorizedIntro}`);
+              } else {
+                  processedIntroLines.push(`        ${colorizedIntro}`); // Injeta 8 espaços para a segunda linha alinhar perfeitamente embaixo do primeiro acorde
+              }
+          }
+          if (processedIntroLines.length > 0) {
+              introHtml = processedIntroLines.join('\n') + '\n\n';
+          }
       }
       
       page.innerHTML = `
@@ -1729,7 +1741,7 @@
               </div>
 
               <div class="doc-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div class="meta-left" style="flex: 1; text-align: left; line-height: 1.4;">
+                <div class="meta-left" style="flex: 1; text-align: left; line-height: 1.4; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
                   <span class="artist">${song.artist || ''}</span> <span class="separator">|</span> <span class="tone-badge">Tom: <span>${displayTone}</span></span>
                 </div>
                 
@@ -1835,104 +1847,178 @@
   /* ==========================================
      A NOVA INTELIGÊNCIA DE EXTRAÇÃO DE INTRO
      ========================================== */
-  async function fetchCifraClubData() {
+  async function fetchCifraWeb() {
       let urlInput = document.getElementById('i-cifra').value.trim();
       const btn = document.getElementById('btn-fetch');
       
-      if (!urlInput || !urlInput.includes('cifraclub')) {
-          alert("Cole um link válido do Cifra Club."); return;
+      if (!urlInput) {
+          alert("Cole um link válido de cifra."); return;
       }
-      urlInput = urlInput.split('?')[0].split('#')[0];
+      
+      let isCifraClub = urlInput.includes('cifraclub');
+      let isCifrasCom = urlInput.includes('cifras.com');
+      let isBanana = urlInput.includes('bananacifras');
+      
+      if (!isCifraClub && !isCifrasCom && !isBanana) {
+          alert("Cole um link do Cifra Club, Cifras.com.br ou Banana Cifras."); return;
+      }
+      
+      let baseUrl = urlInput.split('?')[0].split('#')[0].replace(/\/imprimir\.html\/?$/i, '').replace(/\/+$/, '');
+      let printUrl = baseUrl + (isCifraClub ? '/imprimir.html' : ''); 
+      let normalUrl = baseUrl + '/';
       
       const originalText = btn.innerHTML;
-      btn.innerHTML = "⏳...";
+      btn.innerHTML = "⏳ Buscando...";
       btn.disabled = true;
 
+      const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec?url=";
+
+      let rotas = [];
+      if (isCifraClub) {
+          rotas = [
+              googleProxy + encodeURIComponent(printUrl),
+              googleProxy + encodeURIComponent(normalUrl),
+              "https://api.allorigins.win/raw?url=" + encodeURIComponent(printUrl),
+              "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(printUrl)
+          ];
+      } else {
+          rotas = [
+              googleProxy + encodeURIComponent(normalUrl),
+              "https://api.allorigins.win/raw?url=" + encodeURIComponent(normalUrl),
+              "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(normalUrl),
+              "https://corsproxy.io/?" + encodeURIComponent(normalUrl)
+          ];
+      }
+
       try {
-          const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec";
-          const finalUrl = googleProxy + "?url=" + encodeURIComponent(urlInput);
-          
-          const response = await fetch(finalUrl);
-          if (!response.ok) throw new Error("Falha no proxy particular.");
-          
-          const htmlText = await response.text();
-          
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(htmlText, "text/html");
-          
-          let titleStr = "Nova Música", artistStr = "", tomStr = "";
-          const pageTitle = doc.querySelector('title');
-          if (pageTitle && pageTitle.textContent.includes('-')) {
-              let parts = pageTitle.textContent.split('-');
-              if (parts.length >= 2) { titleStr = parts[0].trim(); artistStr = parts[1].trim(); }
-          }
-          
-          const tomRegex = doc.body.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').match(/Tom:\s*([A-G][#b]?m?)/i);
-          if (tomRegex && tomRegex[1]) tomStr = tomRegex[1].trim();
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
-          const preEl = doc.querySelector('pre');
-          if (preEl) {
-              preEl.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
+          const fetchPromises = rotas.map(async (rota) => {
+              const response = await fetch(rota, { signal: controller.signal });
+              if (!response.ok) throw new Error("Proxy Falhou");
               
-              let lines = preEl.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/\r/g, '').split('\n');
-              let newLines = [];
-              let inIntroBlock = false;
-              let introChords = [];
-              let introHasChords = false;
-
-              for (let line of lines) {
-                  let trimmedLine = line.trim();
-                  let upperLine = trimmedLine.toUpperCase();
-                  
-                  let matchIntro = trimmedLine.match(/^[\{\[\(]?INTRO[\}\]\)\.\:-]?\s*(.*)/i);
-                  
-                  if (matchIntro) {
-                      inIntroBlock = true;
-                      let inlineChords = matchIntro[1].trim();
-                      if (inlineChords) {
-                          introChords.push(inlineChords);
-                          introHasChords = true;
-                      }
-                      continue;
-                  }
-                  
-                  if (inIntroBlock) {
-                      if (upperLine.startsWith('[')) {
-                          inIntroBlock = false;
-                          newLines.push(line);
-                      } else if (trimmedLine === '') {
-                          if (introHasChords) {
-                              inIntroBlock = false;
-                              newLines.push(line);
-                          }
-                      } else {
-                          introChords.push(trimmedLine);
-                          introHasChords = true;
-                      }
-                  } else {
-                      newLines.push(line);
-                  }
+              const htmlText = await response.text();
+              
+              if (!htmlText || htmlText.length < 500 || htmlText.includes('cf-browser-verification') || htmlText.includes('Just a moment...')) {
+                  throw new Error("Página Vazia ou Cloudflare");
               }
 
-              let textoExtraido = newLines.join('\n').trim();
-              document.getElementById('i-content').value = limparTablaturas(textoExtraido); 
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(htmlText, "text/html");
               
-              document.getElementById('i-title').value = titleStr;
-              document.getElementById('i-artist').value = artistStr;
-              document.getElementById('i-tone').value = tomStr;
+              let containerCifra = doc.querySelector('.cifra_cnt pre, .cifra pre, pre, .cifra_cnt, .cifra, #cifra_cnt, [data-testid="cifra"], #core-cifra, .core-cifra, #cifra');
               
-              document.getElementById('i-intro').value = introChords.join(' ').replace(/\s{2,}/g, ' ').trim();
+              if (!containerCifra || containerCifra.textContent.trim().length < 50) {
+                  throw new Error("Layout Mudou ou Cloudflare Bloqueou a cifra");
+              }
+
+              return { doc, containerCifra };
+          });
+
+          const { doc, containerCifra } = await Promise.any(fetchPromises);
+          clearTimeout(timeoutId);
+
+          let titleStr = "Nova Música", artistStr = "", tomStr = "", capoStr = "";
+          
+          const h1El = doc.querySelector('h1.t1, .cifra h1, h1, .titulo-musica');
+          const h2El = doc.querySelector('h2.t3, .cifra h2, h2, h2.artista, .nome-artista');
+          const pageTitle = doc.querySelector('title');
+
+          if (h1El && h1El.textContent.trim()) {
+              titleStr = h1El.textContent.trim();
+              if (h2El && h2El.textContent.trim()) {
+                  artistStr = h2El.textContent.trim();
+              }
+          } else if (pageTitle && pageTitle.textContent.includes('-')) {
+              let parts = pageTitle.textContent.split('-');
+              if (parts.length >= 2) {
+                  titleStr = parts[0].trim();
+                  artistStr = parts[1].replace(/Cifra Club/i, '').replace(/Cifras/i, '').replace(/Banana Cifras/i, '').replace(/\|/g, '').trim();
+              }
+          }
+          
+          function extractText(el) {
+              let clone = el.cloneNode(true);
+              clone.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature, .tab, .ads, .btn, .banner, iframe, ins').forEach(e => e.remove());
+              clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+              clone.querySelectorAll('div, p, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
+              return clone.textContent.replace(/[\u200B-\u200D\uFEFF]/g, '');
+          }
+
+          const fullBodyText = extractText(doc.body);
+          const tomRegex = fullBodyText.match(/Tom:\s*([A-G][#b]?m?)/i);
+          if (tomRegex && tomRegex[1]) tomStr = tomRegex[1].trim();
+
+          const capoRegex = fullBodyText.match(/Capotraste(?: na)? (\d+)ª? casa/i);
+          if (capoRegex && capoRegex[1]) capoStr = capoRegex[1].trim();
+          
+          let rawCifra = extractText(containerCifra).replace(/\r/g, '');
+          rawCifra = rawCifra.replace(/\n{3,}/g, '\n\n');
+
+          let lines = rawCifra.split('\n');
+          let newLines = [];
+          let inIntroBlock = false;
+          let introChords = [];
+          let introHasChords = false;
+
+          for (let line of lines) {
+              let trimmedLine = line.trim();
+              let upperLine = trimmedLine.toUpperCase();
               
-              songs[currentIndex].transposeSteps = 0;
-              document.getElementById('i-transpose-val').innerText = '0';
-              document.getElementById('i-transpose-val').style.color = '#0284c7';
+              let matchIntro = trimmedLine.match(/^[\{\[\(]?(?:INTRO|INTRODUÇÃO)[\}\]\)\.\:-]?\s*(.*)/i);
               
-              saveCurrentSong(); alert("✅ Cifra extraída com sucesso!");
-          } else alert("Não foi possível encontrar a cifra neste link.");
+              if (matchIntro) {
+                  inIntroBlock = true;
+                  let inlineChords = matchIntro[1].trim();
+                  if (inlineChords) {
+                      introChords.push(inlineChords);
+                      introHasChords = true;
+                  }
+                  continue;
+              }
+              
+              if (inIntroBlock) {
+                  if (upperLine.startsWith('[')) {
+                      inIntroBlock = false;
+                      newLines.push(line);
+                  } else if (trimmedLine === '') {
+                      if (introHasChords) {
+                          inIntroBlock = false;
+                          newLines.push(line);
+                      }
+                  } else {
+                          introChords.push(trimmedLine);
+                          introHasChords = true;
+                  }
+              } else {
+                  newLines.push(line);
+              }
+          }
+
+          let textoExtraido = newLines.join('\n').trim();
+          document.getElementById('i-content').value = limparTablaturas(textoExtraido); 
+          document.getElementById('i-title').value = titleStr;
+          document.getElementById('i-artist').value = artistStr;
+          document.getElementById('i-tone').value = tomStr;
+          if (capoStr) document.getElementById('i-capo').value = capoStr;
+          
+          // Preserva o array de intros sem juntar tudo numa linha só na extração
+          document.getElementById('i-intro').value = introChords.join('\n').replace(/ {2,}/g, ' ').trim();
+          
+          songs[currentIndex].transposeSteps = 0;
+          document.getElementById('i-transpose-val').innerText = '0';
+          document.getElementById('i-transpose-val').style.color = '#0284c7';
+          
+          saveCurrentSong();
+          alert("✅ Cifra extraída com sucesso!");
+
       } catch (error) {
-          alert("O navegador mobile bloqueou a extração direta por segurança. Cole a cifra manualmente na caixa abaixo.");
+          console.error(error);
+          alert("⚠️ Falha ao puxar cifra via web. O site de origem barrou a extração.\\n\\nSolução Imediata: Abra a cifra no navegador, copie todo o texto da tela e cole diretamente na caixa gigante 'Letra e Cifras' abaixo. O App limpará a sujeira automaticamente.");
       } finally {
-          btn.innerHTML = originalText; btn.disabled = false;
+          btn.innerHTML = originalText;
+          btn.disabled = false;
       }
   }
 
@@ -1987,7 +2073,10 @@
               tempDiv.querySelectorAll('.sr-only, [style*="display:none"], [style*="display: none"]').forEach(el => el.remove());
               cleanText = tempDiv.textContent || plain;
           }
-          cleanText = cleanText.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ').replace(/\r?\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
+          cleanText = cleanText.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ');
+          
+          // Mantém as quebras de linha mas limpa espaços excessivos
+          cleanText = cleanText.split(/\r?\n/).map(l => l.trim().replace(/\s{2,}/g, ' ')).filter(l => l !== '').join('\n');
           
           const start = this.selectionStart, end = this.selectionEnd;
           this.value = this.value.substring(0, start) + cleanText + this.value.substring(end);
@@ -2000,16 +2089,16 @@
           const plain = e.clipboardData.getData('text/plain') || '';
           const html = e.clipboardData.getData('text/html') || '';
           
-          if (html && (html.toLowerCase().includes('cifraclub') || plain.includes('">'))) {
+          if (html && (html.toLowerCase().includes('cifraclub') || html.toLowerCase().includes('cifras.com') || html.toLowerCase().includes('bananacifras') || plain.includes('">'))) {
               e.preventDefault(); 
               let tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
               
-              tempDiv.querySelectorAll('.sr-only, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
+              tempDiv.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature, iframe, ins').forEach(el => el.remove());
               
               tempDiv.querySelectorAll('br').forEach(br => { br.parentNode.insertBefore(document.createTextNode('\n'), br); br.remove(); });
-              tempDiv.querySelectorAll('div, p, pre, blockquote').forEach(block => block.appendChild(document.createTextNode('\n')));
+              tempDiv.querySelectorAll('div, p, pre, blockquote, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
               
-              let cleanText = (tempDiv.querySelector('pre') ? tempDiv.querySelector('pre').textContent : tempDiv.textContent).replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
+              let cleanText = tempDiv.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
               
               let lines = cleanText.split(/\r?\n/);
               let cleanedLines = [];
@@ -2061,7 +2150,7 @@
               finalText = limparTablaturas(finalText);
               
               if (introChords.length > 0) {
-                  document.getElementById('i-intro').value = introChords.join(' ').replace(/\s{2,}/g, ' ').trim();
+                  document.getElementById('i-intro').value = introChords.join('\n').replace(/ {2,}/g, ' ').trim();
               }
               
               const start = this.selectionStart, end = this.selectionEnd;
