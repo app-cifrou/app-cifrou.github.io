@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="./manifest.json?v=11">
+<link rel="manifest" href="./manifest.json?v=12">
 <meta name="theme-color" content="#0f172a">
 <link rel="apple-touch-icon" href="./logo.png">
 
@@ -422,7 +422,7 @@
   <div class="songs-container">
     
     <div class="sidebar-wrapper">
-      <!-- BARRA DE FERRAMENTAS: BUSCA, ORDENAÇÃO E NOVA MÚSICA -->
+      <!-- BARRA DE FERRAMENTAS: BUSCA, ORDENAÇÃO, NOVA E DUPLICAR MÚSICA -->
       <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; gap: 8px;">
@@ -833,7 +833,7 @@
               </div>
               <div style="font-size: 14px; line-height: 1.5; color: inherit; display: flex; flex-direction: column; gap: 12px;">
                   <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #d97706; display: flex; flex-direction: column; gap: 8px;">
-                      <div><b>Importação Universal:</b> <span style="opacity: 0.8;">Cole o link do Cifra Club, Cifras.com.br ou Banana Cifras acima e clique em "Puxar".</span></div>
+                      <div><b>Importação:</b> <span style="opacity: 0.8;">Cole o link do Cifra Club acima e clique em "Puxar".</span></div>
                       <div><b>Transposição:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
                       <div><b>Capotraste:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
                       <div><b>Separar partes:</b> <span style="opacity: 0.8;">Digite <b>--</b> (2 traços) ou <b>__</b> (2 underlines) numa linha vazia, e crie uma separação entre as partes da música.</span></div>
@@ -841,7 +841,7 @@
                       <div><b>Deixar o texto Negrito:</b> <span style="opacity: 0.8;">Digite <b>[b]</b> acima da linha de início do trecho que você quer deixar negrito e depois digite <b>[/b]</b> abaixo da linha no fim do trecho que deseja deixar em destaque.</span></div>
                   </div>
                   <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #0284c7;">
-                      <b>Colagem Inteligente (Sem Bloqueios):</b><br><span style="opacity: 0.8;">Se o botão "Puxar" for bloqueado pelo site no celular, basta abrir a cifra no navegador, copiar TUDO e colar na caixa de texto. A sujeira e propagandas serão limpas magicamente!</span>
+                      <b>Colagem Inteligente:</b><br><span style="opacity: 0.8;">Se o botão "Puxar" for bloqueado pelo site no celular, basta ir ao Cifra Club, copiar a letra toda e colar nesta caixa. Ela será limpa e formatada magicamente!</span>
                   </div>
               </div>
               <button class="custom-alert-btn" style="margin-top: 10px;" onclick="fecharAjuda()">ENTENDI</button>
@@ -1694,7 +1694,10 @@
       
       let introHtml = '';
       if (song.intro && song.intro.trim() !== '') {
+          // O SEGREDO DO ESPAÇAMENTO: Garante sempre 3 espaços exatos entre cada cifra da Intro
           let cleanIntro = song.intro.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '').trim();
+          cleanIntro = cleanIntro.split(/\s+/).join('   ');
+          
           let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0);
           let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
               return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
@@ -1718,7 +1721,7 @@
               </div>
 
               <div class="doc-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div class="meta-left" style="flex: 1; text-align: left; line-height: 1;">
+                <div class="meta-left" style="flex: 1; text-align: left; line-height: 1.4; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
                   <span class="artist">${song.artist || ''}</span> <span class="separator">|</span> <span class="tone-badge">Tom: <span>${displayTone}</span></span>
                 </div>
                 
@@ -1798,6 +1801,27 @@
       valEl.style.color = steps !== 0 ? '#dc2626' : '#0284c7';
       renderSongList(); renderPreview();
       autoSaveToMemory()
+  }
+
+  function deleteSong(index) {
+      if (songs.length <= 1) {
+          songs = [{ title: 'Nova Música', artist: '', tone: '', capo: '', intro: '', cifra: '', video: '', content: '', transposeSteps: 0 }];
+          currentIndex = 0;
+          selectSong(0);
+          autoSaveToMemory();
+          return;
+      }
+      
+      songs.splice(index, 1);
+      
+      if (currentIndex === index) {
+          if (currentIndex >= songs.length) currentIndex = songs.length - 1;
+      } else if (currentIndex > index) {
+          currentIndex--;
+      }
+      
+      selectSong(currentIndex);
+      autoSaveToMemory();
   }
 
   /* ==========================================
@@ -1902,29 +1926,6 @@
       } finally {
           btn.innerHTML = originalText; btn.disabled = false;
       }
-  }
-
-  function deleteSong(index) {
-      if (songs.length <= 1) {
-          // Se for a última música, limpa a tela para uma "Nova Música" limpa em vez de bloquear
-          songs = [{ title: 'Nova Música', artist: '', tone: '', capo: '', intro: '', cifra: '', video: '', content: '', transposeSteps: 0 }];
-          currentIndex = 0;
-          selectSong(0);
-          autoSaveToMemory();
-          return;
-      }
-      
-      songs.splice(index, 1);
-      
-      // Reajusta o ponteiro para a música anterior, a não ser que tenha deletado a primeira
-      if (currentIndex === index) {
-          if (currentIndex >= songs.length) currentIndex = songs.length - 1;
-      } else if (currentIndex > index) {
-          currentIndex--;
-      }
-      
-      selectSong(currentIndex);
-      autoSaveToMemory();
   }
 
   async function exportarProjeto() {
