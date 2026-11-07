@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- Trava Exclusiva de PC (Garante que o Mobile fique 100% intocado) -->
+<!-- Trava de identificação de Desktop vs Mobile -->
 <script>
     if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         document.documentElement.classList.add('is-desktop');
@@ -13,13 +13,13 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="./manifest.json?v=16">
+<link rel="manifest" href="./manifest.json?v=17">
 <meta name="theme-color" content="#0f172a">
 <link rel="apple-touch-icon" href="./logo.png">
 
 <!-- METADADOS PARA WHATSAPP E REDES SOCIAIS (OPEN GRAPH) -->
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 
 <!-- TAGS DE NOME PARA INSTALAÇÃO (O SEGREDO DO IOS E ANDROID) -->
 <title>Cifrou</title>
@@ -53,13 +53,18 @@
 <style>
   :root { --primary: #0284c7; --bg: #f8fafc; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+      width: 100%; overflow-x: hidden;
+  }
   body { 
-      font-family: system-ui, sans-serif; background: #e2e8f0; color: #1e293b; padding: 20px; 
-      -webkit-text-size-adjust: none; text-size-adjust: none; 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: #e2e8f0; color: #1e293b; padding: 20px; 
+      -webkit-text-size-adjust: 100%; text-size-adjust: 100%; 
+      -webkit-font-smoothing: antialiased;
   }
   
   .no-print {
-    width: 100%; margin: 0 auto 20px auto; background: white; padding: 20px; border-radius: 8px;
+    width: 100%; max-width: 1400px; margin: 0 auto 20px auto; background: white; padding: 20px; border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   }
   
@@ -107,46 +112,51 @@
   /* Seletor de Cores (Dropdown Nativo) */
   .theme-selector-container { 
       border: 1px solid #cbd5e1; background: white; gap: 8px; cursor: pointer; 
-      flex-wrap: nowrap; /* Impede que o botão infle no celular */
-      height: 38px; /* Trava na mesma altura exata dos outros botões */
-      padding: 0 12px; /* Zera o espaçamento vertical interno */
+      flex-wrap: nowrap;
+      height: 38px;
+      padding: 0 12px;
   }
-  .theme-selector-label { font-size: 14px; font-weight: 900; color: #475569; }
+  .theme-selector-label { font-size: 14px; font-weight: 900; color: #475569; white-space: nowrap; }
 
-  /* 💻 LAYOUT PARA PC (Linha única contínua) */
-  @media (min-width: 1051px) {
+  /* LAYOUT PARA PC (Linha única contínua ou wrap suave) */
+  @media (min-width: 1121px) {
       .header-actions { flex-wrap: nowrap; justify-content: flex-start; }
       .app-logo-area { margin-right: auto; flex-shrink: 0;}
       .header-btn { white-space: nowrap; flex-shrink: 0;}
       .theme-selector-container { flex-wrap: nowrap; }
   }
 
-  /* 📱 LAYOUT PARA IPAD & IPHONE & ANDROID (Grid perfeito 2x2 com Fonte Original) */
-  @media (max-width: 1050px) {
+  /* LAYOUT PARA IPAD & IPHONE & ANDROID (Grid perfeito 2x2) */
+  @media (max-width: 1120px) {
       .header-actions {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 12px;
+          gap: 10px;
       }
       .app-logo-area { justify-content: flex-start; width: 100%; }
       .header-btn { width: 100%; white-space: normal; padding: 8px; }
       .project-name-container { width: 100%; }
-      #btn-modo-palco { grid-column: span 2; padding: 12px; font-size: 16px; } /* Faz o botão ocupar a linha toda */
+      #btn-modo-palco { grid-column: span 2; padding: 12px; font-size: 16px; }
   }
   /* ======================================================= */
   
   .songs-container { display: flex; gap: 20px; }
-  .sidebar-wrapper { width: 320px; display: flex; flex-direction: column; gap: 12px; }
+  .sidebar-wrapper { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
   .song-list-sidebar { background: #f1f5f9; border-radius: 8px; padding: 10px; border: 1px solid #cbd5e1; height: 550px; overflow-y: auto; width: 100%; }
-  .editor-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+  .editor-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 15px; }
   
   @media (max-width: 850px) {
     body { padding: 10px; }
+    .no-print { padding: 14px; }
     .songs-container { flex-direction: column; }
     .sidebar-wrapper { width: 100%; }
-    .song-list-sidebar { height: 280px; } 
+    .song-list-sidebar { height: 260px; } 
     .grid { grid-template-columns: 1fr !important; }
     .form-group { grid-column: span 1 !important; }
+    /* Evita o auto-zoom do Safari no iPhone ao tocar nos inputs */
+    .form-group input, .form-group select, .form-group textarea, #i-search, #i-sort, .project-name-container input {
+        font-size: 16px !important;
+    }
   }
   
   .song-item { 
@@ -158,72 +168,101 @@
   .song-item:active { cursor: grabbing; }
   .song-item:hover { border-color: #0284c7; }
   .song-item.active { border-left: 4px solid #0284c7; background: #e0f2fe; }
-  .song-item-title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
+  .song-item-title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding-right: 6px; }
   
   .drag-handle { 
       color: #94a3b8; font-size: 18px; cursor: grab; 
-      padding: 10px 15px 10px 0; margin: -10px 0; touch-action: none; 
+      padding: 10px 15px 10px 0; margin: -10px 0; touch-action: none; flex-shrink: 0;
   }
   
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .form-group label { font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; }
-  .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px;}
+  .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; width: 100%; }
   
   .transpose-controls { display: flex; align-items: center; gap: 6px; }
-  .transpose-val { font-weight: bold; font-size: 16px; width: 30px; text-align: center; color: #0284c7; }
+  .transpose-val { font-weight: bold; font-size: 16px; width: 34px; text-align: center; color: #0284c7; flex-shrink: 0; }
+  .btn-transpose { padding: 8px 14px; background: #e2e8f0; color: #0f172a; border-radius: 6px; font-weight: bold; font-size: 16px; }
+  .btn-transpose:hover { background: #cbd5e1; }
   
-  .text-areas textarea { width: 100%; height: 400px; font-family: monospace; font-size: 14px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 4px; white-space: pre; resize: vertical; }
+  .text-areas textarea { width: 100%; height: 400px; font-family: 'Roboto Mono', monospace; font-size: 14px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 4px; white-space: pre; resize: vertical; overflow-x: auto; }
   
   #yt-player-container iframe { border-radius: 8px; margin-top: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
   
-  .preview-section { margin-top: 30px; width: 100%; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+  /* =======================================================
+     SEÇÃO DE PRÉ-VISUALIZAÇÃO A4 BLINDADA (TODOS OS NAVEGADORES)
+     ======================================================= */
+  .preview-section { margin-top: 25px; width: 100%; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
   .preview-title { text-align: center; color: #475569; margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; text-transform: uppercase; }
-  .a4-wrapper { width: 210mm; display: flex; flex-direction: column; align-items: center; gap: 30px; padding-bottom: 40px; position: relative; }
+  
+  .a4-wrapper { 
+      width: 794px; /* 210mm exatos a 96dpi para consistência absoluta entre iOS, Android e PC */
+      display: flex; flex-direction: column; align-items: center; gap: 30px; padding-bottom: 40px; position: relative; 
+      transform-origin: top center;
+  }
   
   .a4-page {
-    background: white; width: 210mm !important; min-width: 210mm !important; 
-    height: 297mm !important; min-height: 297mm !important; max-height: 297mm !important; 
-    padding: 20px !important; box-shadow: 0 10px 20px rgba(0,0,0,0.15); color: black; position: relative;
+    background: white; 
+    width: 794px !important; min-width: 794px !important; max-width: 794px !important; 
+    height: 1122px !important; min-height: 1122px !important; max-height: 1122px !important; 
+    padding: 22px 24px !important; box-shadow: 0 10px 20px rgba(0,0,0,0.15); color: black; position: relative;
     box-sizing: border-box !important; overflow: hidden !important; display: flex; flex-direction: column; 
     flex-shrink: 0 !important; transition: background-color 0.3s, color 0.3s; margin: 0 auto;
   }
   
   @media screen {
-      .hidden-preview { position: absolute !important; left: -9999px !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+      .hidden-preview { position: absolute !important; left: -9999px !important; top: 0 !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
   }
   
   .a4-content-area { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
   .doc-title { font-size: 22pt !important; font-weight: 800; text-transform: uppercase; line-height: 1.1; color: #000; word-wrap: break-word; white-space: normal; margin: 0; }
   
-  /* CORREÇÃO DO ESPAÇAMENTO ARTISTA/TOM */
   .meta-left { font-size: 13pt !important; font-weight: 600; color: #475569; line-height: 1.4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; row-gap: 4px; }
   
-  .badge { color: white !important; text-decoration: none; font-size: 9pt; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block !important; }
+  .badge { color: white !important; text-decoration: none; font-size: 9pt; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block !important; white-space: nowrap; }
   .badge.video { background: #dc2626 !important; }
   .badge.cifra { background: #d97706 !important; }
 
-  .doc-body { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; padding-bottom: 0; overflow: hidden; } 
-  .cifra-content { font-family: 'Roboto Mono', monospace; font-size: 10pt; line-height: 1.2; white-space: pre; color: #000000; overflow: visible; -webkit-text-size-adjust: none; text-size-adjust: none; width: 100%; }
-  hr.divider { border: 0; border-top: 2px solid #000000; margin: 12px 0; width: 100%; }
-  .split-block { display: flex; width: 100%; gap: 15px; margin-bottom: 2px; }
-  .split-col { flex: 1; }
+  .doc-body { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; padding-bottom: 10px; overflow: hidden; } 
   
-  /* CORREÇÃO DA LINHA PRETA DAS COLUNAS (SPLIT-COL-DIVIDER) */
-  .split-col-divider { 
-      width: 1px; 
-      border-left: 2px solid #000000; 
-      margin: 0 15px; 
-      flex-shrink: 0; 
-      height: auto; /* Garante que a altura acompanhe o flex pai */
-      align-self: stretch; /* Estica a linha preta até o final da coluna mais alta */
+  /* Cifra Content e Colunas Blindadas para iOS, Android e PC */
+  .cifra-content { 
+      font-family: 'Roboto Mono', monospace; font-size: 10pt; line-height: 1.22; 
+      white-space: pre; color: #000000; overflow: visible; 
+      -webkit-text-size-adjust: none; text-size-adjust: none; 
+      font-variant-ligatures: none; font-feature-settings: "liga" 0;
+      width: 100%; 
   }
-
-  /* Trava de colunas exclusiva para PC (não afeta Mobile) */
-  html.is-desktop .split-col {
-      flex: 1 1 0 !important;
-      min-width: 0 !important;
-      max-width: 50% !important;
+  
+  hr.divider { border: 0; border-top: 2px solid #000000; margin: 10px 0; width: 100%; }
+  
+  /* CORREÇÃO DEFINITIVA DAS DUAS COLUNAS EM TODAS AS PLATAFORMAS */
+  .split-block { 
+      display: flex; 
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: space-between;
+      width: 100%; 
+      gap: 0; 
+      margin-bottom: 2px; 
+  }
+  
+  .split-col { 
+      flex: 1 1 0% !important; 
+      min-width: 0 !important; 
+      max-width: calc(50% - 14px) !important;
+      width: calc(50% - 14px) !important;
+      overflow: visible;
+      box-sizing: border-box;
+  }
+  
+  .split-col-divider { 
+      width: 0px; 
+      border-left: 2px solid #000000; 
+      margin: 0 13px; 
+      flex-shrink: 0; 
+      height: auto; 
+      align-self: stretch; 
   }
 
   /* Efeito visual indicando que os acordes são clicáveis */
@@ -267,19 +306,22 @@
   @media print {
     @page { size: A4 portrait; margin: 0 !important; padding: 0 !important; }
     html, body { background: white !important; padding: 0 !important; margin: 0 !important; width: 210mm !important; height: auto !important; overflow: visible !important; display: block !important;}
-    .no-print, .preview-title { display: none !important; }
-    .preview-section { margin: 0 !important; padding: 0 !important; display: block !important;}
-    .a4-wrapper { gap: 0 !important; display: block !important; padding: 0 !important; margin: 0 !important; width: 210mm !important; transform: none !important; zoom: 1 !important; scale: 1 !important; }
+    .no-print, .preview-title, #stage-mode-overlay { display: none !important; }
+    .preview-section { margin: 0 !important; padding: 0 !important; display: block !important; overflow: visible !important; }
+    .a4-wrapper { gap: 0 !important; display: block !important; padding: 0 !important; margin: 0 !important; width: 210mm !important; height: auto !important; transform: none !important; zoom: 1 !important; scale: 1 !important; }
     
     .a4-page {
-        background: white !important; width: 210mm !important; height: 296mm !important; max-height: 296mm !important; 
-        padding: 20px !important; box-shadow: none !important; color: black !important; position: relative;
-        box-sizing: border-box !important; display: block !important; margin: 0 !important; 
+        background: white !important; width: 210mm !important; min-width: 210mm !important; max-width: 210mm !important;
+        height: 296mm !important; min-height: 296mm !important; max-height: 296mm !important; 
+        padding: 22px 24px !important; box-shadow: none !important; color: black !important; position: relative !important;
+        left: 0 !important; top: 0 !important; visibility: visible !important; opacity: 1 !important;
+        box-sizing: border-box !important; display: flex !important; flex-direction: column !important; margin: 0 !important; 
         page-break-after: always !important; page-break-inside: avoid !important; break-after: page !important;
-        break-inside: avoid !important; overflow: hidden !important; zoom: 1 !important; scale: 1 !important;
+        break-inside: avoid !important; overflow: hidden !important; zoom: 1 !important; scale: 1 !important; transform: none !important;
     }
     .a4-page:last-child { page-break-after: avoid !important; break-after: avoid !important; }
-    .a4-content-area, .doc-body { display: block !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+    .a4-content-area { display: flex !important; flex-direction: column !important; height: 100% !important; overflow: hidden !important; }
+    .doc-body { flex: 1 !important; overflow: hidden !important; }
     .doc-header { display: flex !important; }
     
     .cifra-content, .brand-text-setlist { color: #000000 !important; }
@@ -309,20 +351,20 @@
     body.theme-red .dark-mode .chord { color: #f87171 !important; font-weight: bold !important;}
   }
 
-  /* ESTILOS DO NOVO TOOLTIP (BALÃO) DE ACORDES E ZOOM DINÂMICO */
+  /* ESTILOS DO TOOLTIP (BALÃO) DE ACORDES E ZOOM DINÂMICO */
   .chord-tooltip {
       position: absolute;
       z-index: 10000000; 
       background: #ffffff;
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       padding: 15px;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
       border: 1px solid #cbd5e1;
       font-family: system-ui, sans-serif;
-      transform-origin: bottom center; /* Escala a partir da base do balão */
+      transform-origin: bottom center;
   }
   .chord-tooltip.show {
       opacity: 1;
@@ -350,7 +392,7 @@
       border-color: #1e1e1e transparent transparent transparent;
   }
   .chord-tooltip.inverted {
-      transform-origin: top center; /* Se inverter, escala a partir do topo */
+      transform-origin: top center;
   }
   .chord-tooltip.inverted::after {
       top: -8px;
@@ -369,11 +411,9 @@
   }
   .custom-alert-overlay.show { opacity: 1; pointer-events: auto; }
   .custom-alert-box {
-      /* MODO CLARO PADRÃO */
       background: #ffffff; color: #1e293b; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-      width: 85%; max-width: 450px; transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 20px; font-family: system-ui, sans-serif;
+      width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; transform: scale(0.95); transition: transform 0.2s ease; display: flex; flex-direction: column; gap: 20px; font-family: system-ui, sans-serif;
   }
-  /* MODO ESCURO */
   .dark-mode .custom-alert-box { background: #1e1e1e; color: #f3f4f6; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   .custom-alert-overlay.show .custom-alert-box { transform: scale(1); }
   .custom-alert-content { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; line-height: 1.4; }
@@ -416,7 +456,7 @@
         <!-- MODO CLARO/ESCURO COM FONTE PADRÃO 14px -->
         <button class="btn-primary header-btn" style="background:#e2e8f0; color: #1e293b;" id="btn-dark-mode" onclick="toggleDarkMode()">Visualização em Modo Claro ☀️</button>
         
-        <!-- SELETOR DE CORES: DROPDOWN COMO VOCÊ DESENHOU NO PAINT -->
+        <!-- SELETOR DE CORES -->
         <div class="theme-selector-container header-btn">
             <span class="theme-selector-label">Cor da Cifra:</span>
             <select id="chord-theme-selector" onchange="changeChordTheme()" style="background: transparent; border: none; font-size: 18px; cursor: pointer; outline: none; padding: 0;">
@@ -426,7 +466,7 @@
             </select>
         </div>
 
-        <!-- MODO PALCO COM EMOJIS ATUALIZADOS -->
+        <!-- MODO PALCO -->
         <button class="btn-primary header-btn" id="btn-modo-palco" style="background:#8b5cf6;" onclick="abrirModoPalco()">🎸🎤 Modo Palco 🎹🥁</button>
   </div>
   
@@ -438,8 +478,6 @@
           
           <div style="display: flex; gap: 8px;">
               <button class="btn-primary" style="flex: 1; padding: 10px; font-size: 14px;" onclick="addNewSong()">➕ Nova</button>
-              
-              <!-- NOVO BOTÃO DE DUPLICAR AQUI -->
               <button class="btn-primary" style="flex: 1; padding: 10px; font-size: 14px; background: #64748b;" onclick="duplicateSong()" title="Duplicar música selecionada">📄 Duplicar</button>
               
               <select id="i-sort" onchange="sortSongs()" style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: white; cursor: pointer;">
@@ -461,8 +499,7 @@
           <label>Link da Cifra (Cifra Club, Cifras.com.br, Banana Cifras)</label>
           <div style="display: flex; gap: 8px;">
             <input type="text" id="i-cifra" placeholder="https://..." oninput="saveCurrentSong()" style="flex: 1;">
-            <!-- O NOME DA FUNÇÃO FOI CORRIGIDO ABAIXO: -->
-            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer;" onclick="fetchCifraWeb()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
+            <button class="btn-warning" style="border: none; border-radius: 6px; padding: 10px 14px; font-weight: bold; cursor: pointer; flex-shrink: 0;" onclick="fetchCifraWeb()" id="btn-fetch" title="Tentar puxar cifra via web">⬇️ Puxar</button>
           </div>
         </div>
         
@@ -486,10 +523,10 @@
         <div class="form-group">
           <label>Tom</label>
           <div class="transpose-controls">
-              <input type="text" id="i-tone" oninput="saveCurrentSong()" style="width: 60px;">
-              <button class="btn-transpose" onclick="changeTranspose(-1)">-</button>
+              <input type="text" id="i-tone" oninput="saveCurrentSong()" style="width: 70px;">
+              <button class="btn-transpose" type="button" onclick="changeTranspose(-1)">-</button>
               <span class="transpose-val" id="i-transpose-val">0</span>
-              <button class="btn-transpose" onclick="changeTranspose(1)">+</button>
+              <button class="btn-transpose" type="button" onclick="changeTranspose(1)">+</button>
           </div>
         </div>
         
@@ -499,15 +536,14 @@
         </div>
       </div>
 
-      <!-- NOVO CAMPO INTRO MULTI-LINHA OCUPANDO TELA TODA -->
+      <!-- CAMPO INTRO MULTI-LINHA OCUPANDO TELA TODA -->
       <div class="form-group">
         <label>Intro (Aperte Enter para separar linhas longas)</label>
-        <textarea id="i-intro" placeholder="Ex: G D Em C&#10;C D G" oninput="saveCurrentSong()" style="height: 65px; font-family: monospace; resize: vertical;"></textarea>
+        <textarea id="i-intro" placeholder="Ex: G D Em C&#10;C D G" oninput="saveCurrentSong()" style="height: 65px; font-family: 'Roboto Mono', monospace; resize: vertical;"></textarea>
       </div>
       
       <div class="text-areas">
         <div class="form-group">
-          <!-- BOTÃO DE DICAS NOVO E MODERNO -->
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
               <label style="margin: 0;">Letra e Cifras</label>
               <button type="button" onclick="mostrarAjuda()" style="background: transparent; border: none; color: #0284c7; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0;">
@@ -532,7 +568,7 @@
 
 <script>
   /* ==========================================
-     DICIONÁRIO OFFLINE EXPANDIDO E SISTEMA FALLBACK (NÍVEL OURO)
+     DICIONÁRIO OFFLINE EXPANDIDO E SISTEMA FALLBACK
      ========================================== */
   const chordsDB = {
       // MAIORES E MENORES
@@ -590,7 +626,6 @@
       let markerColor = isDarkMode ? '#94a3b8' : '#64748b';
       let arrowColor = isDarkMode ? '#38bdf8' : '#0284c7';
       
-      // Espaçadores fixos para manter a simetria perfeita mesmo sem setas
       let setasHtmlLeft = `<div style="width:24px; flex-shrink:0;"></div>`;
       let setasHtmlRight = `<div style="width:24px; flex-shrink:0;"></div>`;
       let contadorHtml = '';
@@ -696,7 +731,6 @@
   }
 
   function posicionarTooltip(tooltip, element) {
-      // 1. Pega o zoom dinâmico da página base
       let currentZoom = 1;
       let isPalco = document.body.classList.contains('palco-ativo');
       if (isPalco) {
@@ -707,10 +741,8 @@
           if (w && w.style.zoom) currentZoom = parseFloat(w.style.zoom) || 1;
       }
 
-      // Aplica o zoom ao balão (ele respira junto com a folha)
       tooltip.style.zoom = currentZoom;
 
-      // 2. Calcula as posições na tela real
       const rect = element.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
       const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft;
@@ -718,16 +750,17 @@
       tooltip.classList.add('show');
       const tooltipRect = tooltip.getBoundingClientRect();
 
-      let gap = 15 * currentZoom; // O distanciamento da seta também obedece o zoom
+      let gap = 15 * currentZoom;
 
       let top = rect.top + scrollTop - tooltipRect.height - gap;
       let left = rect.left + scrollLeft + (rect.width / 2) - (tooltipRect.width / 2);
 
       tooltip.classList.remove('inverted');
 
+      const viewportW = document.documentElement.clientWidth || window.innerWidth;
       if (left < 10) left = 10;
-      if (left + tooltipRect.width > window.innerWidth - 10) {
-          left = window.innerWidth - tooltipRect.width - 10;
+      if (left + tooltipRect.width > viewportW - 10) {
+          left = viewportW - tooltipRect.width - 10;
       }
       
       if (rect.top - tooltipRect.height - gap < 0) {
@@ -735,12 +768,10 @@
           tooltip.classList.add('inverted'); 
       }
 
-      // 3. Divide as coordenadas pelo zoom para que o engine desenhe no lugar correto
       tooltip.style.top = (top / currentZoom) + 'px';
       tooltip.style.left = (left / currentZoom) + 'px';
   }
 
-  // O SISTEMA DE BUSCA E FALLBACK INTELIGENTE
   function mostrarAcorde(acordeStr, elementClicado) {
       let cleanChord = acordeStr.replace('7M', 'maj7').replace('º', 'dim').replace('°', 'dim').replace('+', 'aug').replace('(b5)', 'b5').replace(/[\(\)]/g, ''); 
       let baseChord = cleanChord.replace(/[^a-zA-Z0-9#b\/]/g, '');
@@ -828,7 +859,6 @@
   let isDarkMode = false;
   let isDirty = false; 
 
-  /* FUNÇÃO PARA O NOVO MENU DE AJUDA COM REORDENAÇÃO E TEXTOS AJUSTADOS */
   window.mostrarAjuda = function() {
       let existente = document.getElementById('custom-help-modal');
       if (existente) existente.remove();
@@ -981,21 +1011,18 @@
   function addNewSong() {
     songs.push({ title: 'Nova Música', artist: '', tone: '', capo: '', intro: '', cifra: '', video: '', content: '', transposeSteps: 0 }); 
     selectSong(songs.length - 1);
-    autoSaveToMemory()
+    autoSaveToMemory();
   }
 
   function duplicateSong() {
     if (songs.length === 0) return;
-    saveCurrentSong(); // Garante que qualquer texto não salvo seja guardado antes da cópia
+    saveCurrentSong();
     
     const songToCopy = songs[currentIndex];
-    const newSong = JSON.parse(JSON.stringify(songToCopy)); // Deep copy completa
+    const newSong = JSON.parse(JSON.stringify(songToCopy));
     newSong.title = newSong.title + " (Cópia)"; 
     
-    // Insere exatamente abaixo da música atual
     songs.splice(currentIndex + 1, 0, newSong);
-    
-    // Seleciona a cópia criada
     selectSong(currentIndex + 1);
     autoSaveToMemory();
   }
@@ -1041,7 +1068,7 @@
       
       reader.onerror = function(e) {
           console.error("Erro ao ler arquivo:", e);
-          alert("❌ Erro ao ler o arquivo. Verifique as permissões no Android.");
+          alert("❌ Erro ao ler o arquivo. Verifique as permissões no aparelho.");
           event.target.value = '';
       };
       
@@ -1090,7 +1117,6 @@
       }
   };
 
-  // Lendo do menu de Seleção Nativo
   function changeChordTheme() {
       const theme = document.getElementById('chord-theme-selector').value;
       document.body.classList.remove('theme-orange', 'theme-blue', 'theme-red');
@@ -1119,7 +1145,7 @@
       }
   }
 
-  /* FUNÇÃO DE IMPRESSÃO INTELIGENTE (BURLANDO O BLOQUEIO DO IOS) */
+  /* FUNÇÃO DE IMPRESSÃO INTELIGENTE */
   function triggerPrint() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
@@ -1133,7 +1159,6 @@
           wrapper.style.removeProperty('transform');
       }
 
-      // SOLUÇÃO PARA O IOS (IPHONE E IPAD INSTALADOS)
       if (isIOS && isStandalone) {
           if (typeof html2pdf === 'undefined') {
               alert("A biblioteca de PDF não foi carregada. Verifique a internet e tente novamente.");
@@ -1145,11 +1170,9 @@
           btn.innerHTML = "⏳ Gerando PDF...";
           btn.disabled = true;
 
-          // Remove gap temporário para o corte das páginas ficar perfeito
           wrapper.style.gap = '0px';
           wrapper.style.paddingBottom = '0px';
 
-          // Revela todas as páginas ocultas
           const pages = wrapper.querySelectorAll('.a4-page');
           pages.forEach(p => p.classList.remove('hidden-preview'));
 
@@ -1162,7 +1185,6 @@
           };
 
           html2pdf().set(opt).from(wrapper).outputPdf('blob').then(function(pdfBlob) {
-              // Restaura a tela
               wrapper.style.gap = '';
               wrapper.style.paddingBottom = '';
               pages.forEach((p, idx) => {
@@ -1170,8 +1192,8 @@
               });
               btn.innerHTML = oldText;
               btn.disabled = false;
+              ajustarEscalaA4();
 
-              // Abre a bandeja nativa do iPhone/iPad para Imprimir ou Salvar
               const file = new File([pdfBlob], pName + ".pdf", { type: 'application/pdf' });
               if (navigator.canShare && navigator.canShare({ files: [file] })) {
                   navigator.share({
@@ -1192,12 +1214,12 @@
               });
               btn.innerHTML = oldText;
               btn.disabled = false;
+              ajustarEscalaA4();
           });
 
           return;
       }
 
-      // IMPRESSÃO NATIVA (PARA PC, ANDROID E SAFARI WEB)
       document.title = pName; 
       document.body.offsetHeight;
       
@@ -1268,7 +1290,6 @@
           let newSpaces = spaces;
           
           if (diff > 0 && newSpaces.length > 0) {
-              // Garante que pelo menos 1 espaço em branco sobreviva para que a cifra não grude
               let spacesToRemove = Math.min(diff, newSpaces.length - 1);
               newSpaces = newSpaces.slice(spacesToRemove);
           } else if (diff < 0) {
@@ -1308,11 +1329,9 @@
             if (trimmed.toLowerCase() === '[b]') { globalIsBold = true; continue; }
             if (trimmed.toLowerCase() === '[/b]') { globalIsBold = false; continue; }
             
-            // Agora a linha divisória é processada individualmente dentro de cada coluna ou bloco
             if (trimmed.match(/^_{2,}$/) || trimmed.match(/^-{2,}$/)) {
-                out = out.replace(/\n+$/, ''); // Remove quebras extras antes da linha para manter o espaçamento limpo
+                out = out.replace(/\n+$/, '');
                 out += '<hr class="divider">';
-                // Pula linhas vazias logo após o traço para não duplicar o espaço em branco
                 while (i + 1 < linesArray.length && linesArray[i + 1].trim() === '') {
                     i++;
                 }
@@ -1322,7 +1341,7 @@
             if (!trimmed) { out += '\n'; continue; } 
             
             let isChordLine = isChordLineStr(currentLine);
-            let finalLine = isChordLine ? transposeLineText(currentLine, steps) : currentLine;
+            let finalLine = isChordLine ? transposeLineText(currentLine, steps).replace(/\s+$/, '') : currentLine;
             let safeLine = finalLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\*(.*?)\*/g, '<b>$1</b>');
             
             if (isChordLine) {
@@ -1573,9 +1592,11 @@
       autoSaveToMemory();
   }
 
-  /* ALGORITMO DE AJUSTE AUTOMÁTICO DE TEXTO COM A FONTE MAXIMIZADA */
+  /* =========================================================================
+     ALGORITMO DE AJUSTE AUTOMÁTICO DE TEXTO (ANTI-CORTE NAS COLUNAS 1 E 2)
+     ========================================================================= */
   function autoFitText() {
-      const pages = document.querySelectorAll('.a4-page');
+      const pages = document.querySelectorAll('#a4-wrapper .a4-page');
       
       pages.forEach(page => {
           const realContent = page.querySelector('.cifra-content');
@@ -1586,27 +1607,30 @@
           const clonePage = page.cloneNode(true);
           clonePage.classList.remove('hidden-preview');
           
-          clonePage.style.position = 'absolute'; 
+          clonePage.style.position = 'fixed'; 
           clonePage.style.top = '0';
           clonePage.style.left = '-9999px'; 
           clonePage.style.margin = '0';
           clonePage.style.transform = 'none'; 
+          clonePage.style.zoom = '1';
           clonePage.style.opacity = '0';
           clonePage.style.pointerEvents = 'none';
           clonePage.style.zIndex = '-9999';
 
-          clonePage.style.setProperty('width', '210mm', 'important');
-          clonePage.style.setProperty('min-width', '210mm', 'important');
-          clonePage.style.setProperty('max-width', '210mm', 'important');
-          clonePage.style.setProperty('height', '296mm', 'important'); 
-          clonePage.style.setProperty('min-height', '296mm', 'important');
-          clonePage.style.setProperty('max-height', '296mm', 'important');
-          clonePage.style.setProperty('padding', '20px', 'important'); 
+          // Fixa exatamente nos 794x1122px padrão A4 sem interferência do zoom mobile
+          clonePage.style.setProperty('width', '794px', 'important');
+          clonePage.style.setProperty('min-width', '794px', 'important');
+          clonePage.style.setProperty('max-width', '794px', 'important');
+          clonePage.style.setProperty('height', '1122px', 'important'); 
+          clonePage.style.setProperty('min-height', '1122px', 'important');
+          clonePage.style.setProperty('max-height', '1122px', 'important');
+          clonePage.style.setProperty('padding', '22px 24px', 'important'); 
 
           document.body.appendChild(clonePage);
 
           const cloneBody = clonePage.querySelector('.doc-body');
           const cloneContent = clonePage.querySelector('.cifra-content');
+          const cloneCols = cloneContent.querySelectorAll('.split-col');
 
           cloneBody.style.flex = '1';
           cloneBody.style.display = 'flex';
@@ -1616,20 +1640,35 @@
 
           void clonePage.offsetHeight;
 
-          let spaceH = cloneBody.clientHeight;
-          let spaceW = cloneBody.clientWidth;
+          // Margem interna de segurança (4px horizontal, 4px vertical) para evitar subpixel clipping no iOS
+          let spaceH = cloneBody.clientHeight - 4;
+          let spaceW = cloneBody.clientWidth - 4;
 
           if (spaceH > 0 && spaceW > 0) {
-              cloneContent.style.lineHeight = '1.2';
-              let minF = 5.0, maxF = 60.0, bestF = minF;
+              cloneContent.style.lineHeight = '1.22';
+              let minF = 4.5, maxF = 55.0, bestF = minF;
 
-              for (let i = 0; i < 25; i++) {
+              for (let i = 0; i < 24; i++) {
                   let mid = (minF + maxF) / 2;
                   cloneContent.style.fontSize = mid + 'pt';
 
                   void cloneContent.offsetHeight;
 
-                  if (cloneContent.scrollHeight > spaceH || cloneContent.scrollWidth > spaceW) {
+                  // Verifica estouro geral na folha
+                  let overflowsMain = (cloneContent.scrollHeight > spaceH) || (cloneContent.scrollWidth > spaceW);
+
+                  // Verifica estouro individual em cada uma das 2 colunas (com 3px de folga para Safari iOS)
+                  let overflowsCol = false;
+                  if (cloneCols.length > 0) {
+                      for (let c = 0; c < cloneCols.length; c++) {
+                          if (cloneCols[c].scrollWidth > (cloneCols[c].clientWidth - 3)) {
+                              overflowsCol = true;
+                              break;
+                          }
+                      }
+                  }
+
+                  if (overflowsMain || overflowsCol) {
                       maxF = mid;
                   } else {
                       bestF = mid;
@@ -1637,9 +1676,10 @@
                   }
               }
 
-              let bestFontSize = Math.max(5.0, bestF - 0.3);
-              realContent.style.fontSize = bestFontSize + 'pt';
-              realContent.style.lineHeight = '1.2';
+              // Folga de segurança de 0.45pt garante que nenhuma letra encoste na margem no iPhone
+              let bestFontSize = Math.max(4.5, bestF - 0.45);
+              realContent.style.fontSize = bestFontSize.toFixed(2) + 'pt';
+              realContent.style.lineHeight = '1.22';
           }
 
           document.body.removeChild(clonePage);
@@ -1653,13 +1693,12 @@
       if (!wrapper) return;
       
       const larguraA4 = 794; 
-      const larguraTela = window.innerWidth - 20; 
+      const clientW = document.documentElement.clientWidth || window.innerWidth;
+      const larguraTela = clientW - 20; 
       
       if (larguraTela < larguraA4) {
           const escala = larguraTela / larguraA4;
-          
           wrapper.style.zoom = escala;
-          
           wrapper.style.transform = 'none';
           wrapper.style.marginBottom = '0';
       } else {
@@ -1669,24 +1708,29 @@
       }
   }
 
-  // Atualiza as escalas ao redimensionar janelas
   window.addEventListener('resize', () => {
       ajustarEscalaA4();
       if (typeof ajustarEscalaPalco === 'function') ajustarEscalaPalco();
-      // Oculta o tooltip se a tela for redimensionada
       let tooltip = document.getElementById('chord-tooltip');
       if (tooltip) tooltip.classList.remove('show');
   });
 
-  // Gatilho exclusivo para forçar a renderização ao deitar/levantar celulares Android e iOS
   window.addEventListener('orientationchange', () => {
       setTimeout(() => {
+          autoFitText();
           ajustarEscalaA4();
           if (typeof ajustarEscalaPalco === 'function') ajustarEscalaPalco();
       }, 300);
       let tooltip = document.getElementById('chord-tooltip');
       if (tooltip) tooltip.classList.remove('show');
   });
+
+  // Recalcula o tamanho exato assim que a fonte Roboto Mono terminar de carregar
+  if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+          autoFitText();
+      });
+  }
 
   function renderPreview() {
     const wrapper = document.getElementById('a4-wrapper');
@@ -1704,7 +1748,7 @@
           let numeroCasa = song.capo.toString().replace(/\D/g, ''); 
           if (numeroCasa !== '' && numeroCasa !== '0') {
               capoValue = parseInt(numeroCasa, 10);
-              capoText = `<span class="capo-text" style="color: #dc2626; font-weight: 800; text-transform: uppercase; font-size: 16pt; white-space: nowrap;">CAPO NA ${numeroCasa}ª CASA</span>`;
+              capoText = `<span class="capo-text" style="color: #dc2626; font-weight: 800; text-transform: uppercase; font-size: 15pt; white-space: nowrap;">CAPO NA ${numeroCasa}ª CASA</span>`;
           }
       }
       
@@ -1721,7 +1765,7 @@
               let cleanIntro = cleanIntroLines[i].replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '').trim();
               if (cleanIntro === '') continue;
               
-              let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0);
+              let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0).replace(/\s+$/, '');
               let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
                   return isChord(word) ? `<span class="chord">${word}</span>${spaces}` : match;
               });
@@ -1729,7 +1773,7 @@
               if (processedIntroLines.length === 0) {
                   processedIntroLines.push(`[Intro] ${colorizedIntro}`);
               } else {
-                  processedIntroLines.push(`        ${colorizedIntro}`); // 8 espaços exatos de alinhamento
+                  processedIntroLines.push(`        ${colorizedIntro}`);
               }
           }
           if (processedIntroLines.length > 0) {
@@ -1752,12 +1796,12 @@
                   </div>
               </div>
 
-              <div class="doc-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div class="doc-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px;">
                 <div class="meta-left" style="flex: 1; text-align: left; line-height: 1.4; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
                   <span class="artist">${song.artist || ''}</span> <span class="separator">|</span> <span class="tone-badge">Tom: <span>${displayTone}</span></span>
                 </div>
                 
-                <div style="flex: 1; display: flex; justify-content: center; align-items: center; text-align: center; min-width: max-content;">${capoText}</div>
+                <div style="display: flex; justify-content: center; align-items: center; text-align: center; flex-shrink: 0;">${capoText}</div>
                 
                 <div style="flex: 1; display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
                     ${vBadge}${cBadge}
@@ -1818,8 +1862,8 @@
     updateYouTubePlayer(songs[currentIndex].video); 
     
     renderSongList();
-    clearTimeout(renderTimeout); renderTimeout = setTimeout(() => renderPreview(), 300);
-    autoSaveToMemory()
+    clearTimeout(renderTimeout); renderTimeout = setTimeout(() => renderPreview(), 250);
+    autoSaveToMemory();
   }
   
   function changeTranspose(delta) {
@@ -1832,7 +1876,7 @@
       valEl.innerText = (steps > 0 ? '+' : '') + steps;
       valEl.style.color = steps !== 0 ? '#dc2626' : '#0284c7';
       renderSongList(); renderPreview();
-      autoSaveToMemory()
+      autoSaveToMemory();
   }
 
   function deleteSong(index) {
@@ -1857,7 +1901,7 @@
   }
 
   /* ==========================================
-     MOTOR DE EXTRAÇÃO HACKER (PARALELO E MULTI-LAYOUT)
+     MOTOR DE EXTRAÇÃO WEB
      ========================================== */
   async function fetchCifraWeb() {
       let urlInput = document.getElementById('i-cifra').value.trim();
@@ -1883,7 +1927,6 @@
       btn.innerHTML = "⏳ Buscando...";
       btn.disabled = true;
 
-      // Seu Script do Google Atualizado
       const googleProxy = "https://script.google.com/macros/s/AKfycbyoa0mQfkCUR8tZEzGhb1KN2RFmbkHH6U7e4HyH1UmZzabSfBqWRe_6peUwoTFAznIF/exec?url=";
 
       let rotas = [];
@@ -1913,7 +1956,6 @@
               
               const htmlText = await response.text();
               
-              // Se a página retornada for o desafio do Cloudflare (muito curta ou contendo as flags de verificação), rejeitamos a rota
               if (!htmlText || htmlText.length < 500 || htmlText.includes('cf-browser-verification') || htmlText.includes('Just a moment...')) {
                   throw new Error("Página Vazia ou Cloudflare");
               }
@@ -1921,7 +1963,6 @@
               const parser = new DOMParser();
               const doc = parser.parseFromString(htmlText, "text/html");
               
-              // O Selector Universal (Puxa independente da plataforma)
               let containerCifra = doc.querySelector('.cifra_cnt pre, .cifra pre, pre, .cifra_cnt, .cifra, #cifra_cnt, [data-testid="cifra"], #core-cifra, .core-cifra, #cifra');
               
               if (!containerCifra || containerCifra.textContent.trim().length < 50) {
@@ -1931,7 +1972,6 @@
               return { doc, containerCifra };
           });
 
-          // Pega a primeira rota que vencer a segurança
           const { doc, containerCifra } = await Promise.any(fetchPromises);
           clearTimeout(timeoutId);
 
@@ -1954,10 +1994,8 @@
               }
           }
           
-          // Função que converte o HTML bruto (mesmo dentro de Divs e Spans) preservando as quebras de linha perfeitamente
           function extractText(el) {
               let clone = el.cloneNode(true);
-              // Limpeza profunda de divs e iframes de anúncios que se infiltram no código do Cifras.com
               clone.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature, .tab, .ads, .btn, .banner, iframe, ins').forEach(e => e.remove());
               clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
               clone.querySelectorAll('div, p, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
@@ -1984,7 +2022,6 @@
               let trimmedLine = line.trim();
               let upperLine = trimmedLine.toUpperCase();
               
-              // Reconhece a Intro nos três sites
               let matchIntro = trimmedLine.match(/^[\{\[\(]?(?:INTRO|INTRODUÇÃO)[\}\]\)\.\:-]?\s*(.*)/i);
               
               if (matchIntro) {
@@ -2033,7 +2070,7 @@
 
       } catch (error) {
           console.error(error);
-          alert("⚠️ Falha ao puxar cifra via web. O site de origem barrou a extração.\\n\\nSolução Imediata: Abra a cifra no navegador, copie todo o texto da tela e cole diretamente na caixa gigante 'Letra e Cifras' abaixo. O App limpará a sujeira automaticamente.");
+          alert("⚠️ Falha ao puxar cifra via web. O site de origem barrou a extração.\\n\\nSolução Imediata: Abra a cifra no navegador, copie todo o texto da tela e cole diretamente na caixa 'Letra e Cifras' abaixo. O App limpará a sujeira automaticamente.");
       } finally {
           btn.innerHTML = originalText;
           btn.disabled = false;
@@ -2053,8 +2090,6 @@
               const file = new File([jsonStr], fileName, { type: "application/json" });
               if (navigator.canShare({ files: [file] })) {
                   try {
-                      // CORREÇÃO: Enviando apenas o arquivo, sem a tag "text" e "title", 
-                      // para evitar a criação do arquivo .txt extra no iOS.
                       await navigator.share({
                           files: [file]
                       });
@@ -2099,12 +2134,10 @@
           saveCurrentSong();
       });
 
-      // LÓGICA BLINDADA DE INTRODUÇÃO TAMBÉM NO "COLAR"
       document.getElementById('i-content').addEventListener('paste', function(e) {
           const plain = e.clipboardData.getData('text/plain') || '';
           const html = e.clipboardData.getData('text/html') || '';
           
-          // Ampliada a detecção para todos os sites suportados
           if (html && (html.toLowerCase().includes('cifraclub') || html.toLowerCase().includes('cifras.com') || html.toLowerCase().includes('bananacifras') || plain.includes('">'))) {
               e.preventDefault(); 
               let tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
@@ -2114,7 +2147,6 @@
               tempDiv.querySelectorAll('br').forEach(br => { br.parentNode.insertBefore(document.createTextNode('\n'), br); br.remove(); });
               tempDiv.querySelectorAll('div, p, pre, blockquote, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
               
-              // BLINDAGEM MÁXIMA NO COLAR CIFRA
               let cleanText = tempDiv.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
               
               let lines = cleanText.split(/\r?\n/);
@@ -2195,21 +2227,18 @@
 function abrirModoPalco() {
     renderPreview(); 
     
-    // A MÁGICA AQUI: Oculta o app de fundo para matar o embaçado do iOS
     document.body.classList.add('palco-ativo');
     
     const overlay = document.getElementById('stage-mode-overlay');
     overlay.classList.add('show');
     overlay.classList.remove('reading-mode'); 
     
-    // Garante a sincronização da cor de fundo ao abrir a tela
     if (isDarkMode) {
         overlay.classList.add('dark-mode');
     } else {
         overlay.classList.remove('dark-mode');
     }
     
-    // Limpa a busca do palco ao abrir
     document.getElementById('i-stage-search').value = '';
 
     renderizarListaPalco();
@@ -2217,10 +2246,12 @@ function abrirModoPalco() {
 }
 
 function fecharModoPalco() {
-    // Traz o app de volta quando você fecha o modo palco
     document.body.classList.remove('palco-ativo');
-    
     document.getElementById('stage-mode-overlay').classList.remove('show');
+    setTimeout(() => {
+        autoFitText();
+        ajustarEscalaA4();
+    }, 50);
 }
 
 function filtrarMusicasPalco() {
@@ -2250,24 +2281,19 @@ function renderizarListaPalco() {
         div.innerText = `${index + 1}. ${song.title || 'Música'}`;
         
         div.onclick = (e) => {
-            e.stopPropagation(); // Impede que o clique na barra lateral acione a tela cheia acidentalmente
+            e.stopPropagation();
             selecionarMusicaPalco(index);
-            
-            // A linha overlay.classList.add('reading-mode'); foi removida daqui.
-            // O setlist permanecerá aberto até que você toque na folha da música.
         };
         list.appendChild(div);
     });
 }
 
 function toggleStageSidebar(event) {
-    // Evita que arrastar a folha ou clicar numa cifra feche a tela inteira
     if (window.stageHasDragged) {
         setTimeout(() => { window.stageHasDragged = false; }, 50);
         return;
     }
     
-    // Evita conflito se você clicar nos botões de Vídeo, Cifra ou nos Acordes
     if (event && event.target && (event.target.closest('a') || event.target.closest('button') || event.target.classList.contains('chord'))) return;
     
     const overlay = document.getElementById('stage-mode-overlay');
@@ -2295,23 +2321,19 @@ function selecionarMusicaPalco(index) {
         const paginaClonada = paginasA4[index].cloneNode(true);
         paginaClonada.classList.remove('hidden-preview');
         
-        // Removemos o reset de zoom que quebrava o layout
-        
         containerPalco.appendChild(paginaClonada);
         
-        // Aplica a escala instantaneamente
-        setTimeout(ajustarEscalaPalco, 10);
+        setTimeout(ajustarEscalaPalco, 15);
     }
 }
 
-// NOVA FUNÇÃO: Calcula a escala perfeita da folha para qualquer celular ou PC
 function ajustarEscalaPalco() {
     const palcoContent = document.getElementById('stage-content');
     const pagina = document.querySelector('#stage-a4-container .a4-page');
     if (!palcoContent || !pagina) return;
 
     const larguraA4 = 794; 
-    const alturaA4 = 1123; // Altura padrão do formato A4
+    const alturaA4 = 1122;
     
     const style = window.getComputedStyle(palcoContent);
     const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
@@ -2320,14 +2342,11 @@ function ajustarEscalaPalco() {
     const espacoW = palcoContent.clientWidth - paddingX;
     const espacoH = palcoContent.clientHeight - paddingY;
 
-    // Calcula a proporção necessária para encaixar na largura e na altura
     const escalaW = espacoW / larguraA4;
     const escalaH = espacoH / alturaA4;
 
-    // A MÁGICA: Escolhe a menor escala para garantir que a folha não corte em cima nem nos lados
     let escalaFinal = Math.min(escalaW, escalaH);
 
-    // Aplica a escala final com um respiro de 2% para manter as margens visíveis
     pagina.style.zoom = escalaFinal * 0.98;
 }
 
@@ -2341,11 +2360,9 @@ let stageStartX, stageStartY, stageScrollLeft, stageScrollTop;
 document.addEventListener('DOMContentLoaded', () => {
     const stageContent = document.getElementById('stage-content');
     
-    // Inicia o arrasto (Clique e segura)
     stageContent.addEventListener('mousedown', (e) => {
         if (e.target.closest('a') || e.target.closest('button') || e.target.classList.contains('chord')) return;
         
-        // MÁGICA: Previne o comportamento padrão que seleciona o texto
         e.preventDefault(); 
         
         isStageDragging = true;
@@ -2358,11 +2375,10 @@ document.addEventListener('DOMContentLoaded', () => {
         stageScrollTop = stageContent.scrollTop;
     });
 
-    // Movimenta a folha
     stageContent.addEventListener('mousemove', (e) => {
         if (!isStageDragging) return;
         
-        e.preventDefault(); // Reforço contra seleção de texto
+        e.preventDefault();
         
         const x = e.pageX - stageContent.offsetLeft;
         const y = e.pageY - stageContent.offsetTop;
@@ -2379,7 +2395,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Solta o clique
     const stopDragging = () => {
         isStageDragging = false;
         stageContent.style.cursor = 'pointer';
@@ -2388,11 +2403,9 @@ document.addEventListener('DOMContentLoaded', () => {
     stageContent.addEventListener('mouseup', stopDragging);
     stageContent.addEventListener('mouseleave', stopDragging);
 
-    // Zoom com a roda do mouse (Scroll Wheel)
     stageContent.addEventListener('wheel', (e) => {
         if (!document.documentElement.classList.contains('is-desktop')) return; 
         
-        // Bloqueia a rolagem padrão da página para aplicar o zoom
         e.preventDefault(); 
         
         const pagina = document.querySelector('#stage-a4-container .a4-page');
@@ -2400,17 +2413,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let currentZoom = parseFloat(pagina.style.zoom) || 1;
         
-        // Pega apenas a direção da roda para um passo de zoom consistente
         const zoomDirection = Math.sign(e.deltaY);
         const zoomSpeed = 0.1; 
         
         if (zoomDirection < 0) {
-            currentZoom += zoomSpeed; // Zoom In
+            currentZoom += zoomSpeed;
         } else {
-            currentZoom -= zoomSpeed; // Zoom Out
+            currentZoom -= zoomSpeed;
         }
         
-        // Limites de zoom
         if (currentZoom < 0.3) currentZoom = 0.3;
         if (currentZoom > 4.0) currentZoom = 4.0;
         
@@ -2422,34 +2433,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- ESTRUTURA DO MODO PALCO -->
 <div id="stage-mode-overlay" class="stage-overlay">
-    <button class="stage-close-btn" onclick="fecharModoPalco()">X Fechar Modo Palco</button>
+    <button class="stage-close-btn" onclick="fecharModoPalco()">✕ Fechar Modo Palco</button>
     
     <div id="stage-sidebar" class="stage-sidebar">
         <div class="stage-sidebar-header">🎼 Setlist</div>
-        <!-- NOVO CAMPO DE BUSCA DO MODO PALCO -->
         <div class="stage-search-container">
             <input type="text" id="i-stage-search" placeholder="🔍 Buscar música..." oninput="filtrarMusicasPalco()">
         </div>
         <div id="stage-song-list"></div>
     </div>
     
-    <!-- O (event) aqui garante o funcionamento do clique em todas as telas -->
     <div id="stage-content" class="stage-content" onclick="toggleStageSidebar(event)">
-        <!-- A cifra será injetada aqui -->
         <div id="stage-a4-container"></div>
     </div>
 </div>
 
 <style>
 
-/* ESTILOS DO MODO PALCO (CORRIGIDO) */
+/* ESTILOS DO MODO PALCO (100dvh PARA COMPATIBILIDADE TOTAL COM SAFARI IOS E SAMSUNG/CHROME ANDROID) */
 .stage-overlay {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    position: fixed; top: 0; left: 0; width: 100vw; 
+    height: 100vh; height: 100dvh;
     background: #e2e8f0; z-index: 999999; display: flex; flex-direction: row;
     opacity: 0; pointer-events: none; transition: background 0.3s ease, opacity 0.3s ease;
     font-family: system-ui, sans-serif; overflow: hidden;
     
-    /* AFASTA O APLICATIVO DA BARRA "EMBAÇADA" DO IOS */
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
@@ -2461,25 +2469,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 .stage-close-btn {
     position: absolute; 
-    top: 12px; 
-    right: 15px; 
+    top: calc(12px + env(safe-area-inset-top)); 
+    right: calc(15px + env(safe-area-inset-right)); 
     z-index: 1000000;
     background: #dc2626; 
     color: white; 
     border: none; 
-    /* Aumentamos as margens internas vertical e horizontal para expandir o botão */
-    padding: 18px 30px; 
+    padding: 14px 24px; 
     border-radius: 8px; 
     font-weight: bold; 
     cursor: pointer; 
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     transition: all 0.3s ease;
 }
 
-/* BARRA LATERAL (FLEXÍVEL E UNIVERSAL) */
+/* BARRA LATERAL */
 .stage-sidebar {
-    width: 320px; max-width: 85%; flex-shrink: 0; background: #f8fafc; border-right: 1px solid #cbd5e1;
-    display: flex; flex-direction: column; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 320px; max-width: 82%; flex-shrink: 0; background: #f8fafc; border-right: 1px solid #cbd5e1;
+    display: flex; flex-direction: column; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 999998; margin-left: 0; 
 }
 .dark-mode .stage-sidebar { background: #1e293b; border-color: #334155; }
@@ -2497,7 +2504,7 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 #i-stage-search { 
     width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; 
-    font-size: 14px; outline: none; background: white; color: #1e293b; 
+    font-size: 16px; outline: none; background: white; color: #1e293b; 
 }
 .dark-mode #i-stage-search { 
     background: #0f172a; border-color: #475569; color: #f8fafc; 
@@ -2505,7 +2512,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 #stage-song-list { flex: 1; overflow-y: auto; padding: 10px; }
 .stage-song-item {
-    padding: 15px; margin-bottom: 8px; background: white; border: 1px solid #cbd5e1;
+    padding: 14px; margin-bottom: 8px; background: white; border: 1px solid #cbd5e1;
     border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px;
     display: flex; align-items: center; transition: 0.2s;
 }
@@ -2513,29 +2520,28 @@ document.addEventListener('DOMContentLoaded', () => {
 .stage-song-item.active { border-left: 5px solid #0284c7; background: #e0f2fe; color: #0369a1; }
 .dark-mode .stage-song-item.active { background: #0f172a; color: #38bdf8; }
 
-/* CONTEÚDO PRINCIPAL E MÁSCARA DE CLIQUE PARA IOS */
+/* CONTEÚDO PRINCIPAL DO PALCO */
 .stage-content {
     flex: 1; height: 100%; 
-    overflow: auto; /* Permite movimentar a folha em todos os eixos */
-    display: block; text-align: center; /* Centraliza sem travar as bordas da tela */
-    padding: 20px; cursor: pointer; transition: padding 0.3s ease;
+    overflow: auto;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 16px; cursor: pointer; transition: padding 0.3s ease;
     -webkit-tap-highlight-color: transparent; 
 }
 .stage-content * { cursor: pointer; } 
 #stage-a4-container { 
     display: inline-flex; justify-content: center; text-align: left; 
-    margin: 0 auto; transition: all 0.3s ease; transform-origin: top center;
+    margin: auto; transition: all 0.25s ease; transform-origin: center center;
 }
 
 /* =======================================
    O EFEITO DE TELA CHEIA (MODO LEITURA)
    ======================================= */
-/* MUDA O FUNDO DA TELA INTEIRA PARA BRANCO NO MODO LEITURA (MESCLA COM A FOLHA) */
 .stage-overlay.reading-mode { background: white; }
 .dark-mode .stage-overlay.reading-mode { background: #121212; }
 
 .stage-overlay.reading-mode .stage-sidebar { margin-left: -320px; }
-.stage-overlay.reading-mode .stage-content { padding: 0 !important; }
+.stage-overlay.reading-mode .stage-content { padding: 4px !important; }
 .stage-overlay.reading-mode .stage-close-btn { opacity: 0; pointer-events: none; transform: translateY(-20px); }
 
 .stage-overlay.reading-mode #stage-a4-container .a4-page {
@@ -2543,21 +2549,19 @@ document.addEventListener('DOMContentLoaded', () => {
     border-radius: 0 !important; 
     box-shadow: none !important; 
     border: none !important;
-    /* Removidas as travas de largura, altura e zoom para o JavaScript controlar a escala */
 }
 
 /* COMPORTAMENTO PARA CELULARES E IPAD EM PÉ */
 @media (max-width: 850px) {
     .stage-sidebar {
         position: absolute; height: 100%; left: 0; top: 0;
-        transform: translateX(0); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(0);
         margin-left: 0 !important;
     }
     .stage-overlay.reading-mode .stage-sidebar {
-        transform: translateX(-100%);
+        transform: translateX(-105%);
     }
-    .stage-content { padding: 15px 5px; }
-    #stage-a4-container .a4-page { zoom: 0.9; }
+    .stage-content { padding: 10px 4px; }
 }
 
 /* =======================================
@@ -2565,14 +2569,14 @@ document.addEventListener('DOMContentLoaded', () => {
    ======================================= */
 body.palco-ativo .no-print,
 body.palco-ativo .preview-section {
-    display: none !important; /* Esconde o app de fundo para o iOS não embaçar as cores */
+    display: none !important;
 }
 body.palco-ativo {
-    background: white !important; /* Deixa o fundo sólido */
+    background: white !important;
     padding: 0 !important;
+    overflow: hidden !important;
 }
 
-/* Sincronização do Fundo do Modo Palco com o Modo Escuro */
 .stage-overlay.dark-mode { background: #0f172a !important; }
 .stage-overlay.dark-mode.reading-mode { background: #121212 !important; }
 
@@ -2580,11 +2584,9 @@ body.palco-ativo {
    VISUAL DE FOLHA A4 PARA COMPUTADOR/TABLET HORIZONTAL
    ======================================= */
 @media (min-width: 851px) {
-    /* Restaura o fundo colorido em telas grandes para destacar a folha */
     .stage-overlay.reading-mode { background: #e2e8f0; } 
     .dark-mode .stage-overlay.reading-mode { background: #0f172a; }
     
-    /* Devolve as margens e a sombra 3D para criar o aspecto de papel na mesa */
     .stage-overlay.reading-mode .stage-content { padding: 20px !important; }
     .stage-overlay.reading-mode #stage-a4-container .a4-page {
         box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important; 
