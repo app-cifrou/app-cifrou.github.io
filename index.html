@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./logo.png">
 
 <!-- Links para o PWA (Instalação no Celular e PC - CACHE BUSTER MÁXIMO) -->
-<link rel="manifest" href="./manifest.json?v=12">
+<link rel="manifest" href="./manifest.json?v=13">
 <meta name="theme-color" content="#0f172a">
 <link rel="apple-touch-icon" href="./logo.png">
 
@@ -195,7 +195,9 @@
   
   .a4-content-area { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
   .doc-title { font-size: 22pt !important; font-weight: 800; text-transform: uppercase; line-height: 1.1; color: #000; word-wrap: break-word; white-space: normal; }
-  .meta-left { font-size: 13pt !important; font-weight: 600; color: #475569; }
+  
+  /* CORREÇÃO DO TOM SOBREPOSTO: Ajuste de line-height e margin */
+  .meta-left { font-size: 13pt !important; font-weight: 600; color: #475569; line-height: 1.5; padding: 4px 0; }
   
   .badge { color: white !important; text-decoration: none; font-size: 9pt; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block !important; }
   .badge.video { background: #dc2626 !important; }
@@ -833,7 +835,7 @@
               </div>
               <div style="font-size: 14px; line-height: 1.5; color: inherit; display: flex; flex-direction: column; gap: 12px;">
                   <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #d97706; display: flex; flex-direction: column; gap: 8px;">
-                      <div><b>Importação:</b> <span style="opacity: 0.8;">Cole o link do Cifra Club acima e clique em "Puxar".</span></div>
+                      <div><b>Importação Universal:</b> <span style="opacity: 0.8;">Cole o link do Cifra Club, Cifras.com.br ou Banana Cifras acima e clique em "Puxar".</span></div>
                       <div><b>Transposição:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
                       <div><b>Capotraste:</b> <span style="opacity: 0.8;">O "Tom" e as "Cifras" exibidas na página de visualização serão ajustados automaticamente.</span></div>
                       <div><b>Separar partes:</b> <span style="opacity: 0.8;">Digite <b>--</b> (2 traços) ou <b>__</b> (2 underlines) numa linha vazia, e crie uma separação entre as partes da música.</span></div>
@@ -841,7 +843,7 @@
                       <div><b>Deixar o texto Negrito:</b> <span style="opacity: 0.8;">Digite <b>[b]</b> acima da linha de início do trecho que você quer deixar negrito e depois digite <b>[/b]</b> abaixo da linha no fim do trecho que deseja deixar em destaque.</span></div>
                   </div>
                   <div style="background: rgba(128,128,128,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #0284c7;">
-                      <b>Colagem Inteligente:</b><br><span style="opacity: 0.8;">Se o botão "Puxar" for bloqueado pelo site no celular, basta ir ao Cifra Club, copiar a letra toda e colar nesta caixa. Ela será limpa e formatada magicamente!</span>
+                      <b>Colagem Inteligente (Sem Bloqueios):</b><br><span style="opacity: 0.8;">Se o botão "Puxar" for bloqueado pelo site no celular, basta abrir a cifra no navegador, copiar TUDO e colar na caixa de texto. A sujeira e propagandas serão limpas magicamente!</span>
                   </div>
               </div>
               <button class="custom-alert-btn" style="margin-top: 10px;" onclick="fecharAjuda()">ENTENDI</button>
@@ -1251,10 +1253,19 @@
       return line.replace(wordExtractor, (match, word, spaces) => {
           if (!isChord(word)) return match; 
           let newChord = transposeSingleChord(word, steps);
+          
+          // O SEGREDO DO ESPAÇO PRESERVADO:
+          // A lógica de alinhar a letra debaixo da cifra mudou: nunca apaga o último espaço!
           let diff = newChord.length - word.length;
           let newSpaces = spaces;
-          if (diff > 0 && newSpaces.length >= diff) newSpaces = newSpaces.slice(diff);
-          else if (diff < 0) newSpaces = newSpaces + ' '.repeat(-diff);
+          
+          if (diff > 0 && newSpaces.length > 0) {
+              // Reduz o espaço para alinhar a letra, mas DEIXA no mínimo 1 espaço para as cifras não se fundirem.
+              let spacesToRemove = Math.min(diff, newSpaces.length - 1);
+              newSpaces = newSpaces.slice(spacesToRemove);
+          } else if (diff < 0) {
+              newSpaces = newSpaces + ' '.repeat(-diff);
+          }
           return newChord + newSpaces;
       });
   }
@@ -1694,9 +1705,8 @@
       
       let introHtml = '';
       if (song.intro && song.intro.trim() !== '') {
-          // O SEGREDO DO ESPAÇAMENTO: Garante sempre 3 espaços exatos entre cada cifra da Intro
+          // O SEGREDO DO ESPAÇAMENTO RESTAURADO: Apenas limpa a intro mantendo os espaços que você digitou!
           let cleanIntro = song.intro.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '').trim();
-          cleanIntro = cleanIntro.split(/\s+/).join('   ');
           
           let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0);
           let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
@@ -1721,7 +1731,7 @@
               </div>
 
               <div class="doc-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div class="meta-left" style="flex: 1; text-align: left; line-height: 1.4; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+                <div class="meta-left" style="flex: 1; text-align: left; line-height: 1.5; padding: 4px 0;">
                   <span class="artist">${song.artist || ''}</span> <span class="separator">|</span> <span class="tone-badge">Tom: <span>${displayTone}</span></span>
                 </div>
                 
@@ -1803,27 +1813,6 @@
       autoSaveToMemory()
   }
 
-  function deleteSong(index) {
-      if (songs.length <= 1) {
-          songs = [{ title: 'Nova Música', artist: '', tone: '', capo: '', intro: '', cifra: '', video: '', content: '', transposeSteps: 0 }];
-          currentIndex = 0;
-          selectSong(0);
-          autoSaveToMemory();
-          return;
-      }
-      
-      songs.splice(index, 1);
-      
-      if (currentIndex === index) {
-          if (currentIndex >= songs.length) currentIndex = songs.length - 1;
-      } else if (currentIndex > index) {
-          currentIndex--;
-      }
-      
-      selectSong(currentIndex);
-      autoSaveToMemory();
-  }
-
   /* ==========================================
      A NOVA INTELIGÊNCIA DE EXTRAÇÃO DE INTRO
      ========================================== */
@@ -1859,14 +1848,14 @@
               if (parts.length >= 2) { titleStr = parts[0].trim(); artistStr = parts[1].trim(); }
           }
           
-          const tomRegex = doc.body.textContent.match(/Tom:\s*([A-G][#b]?m?)/i);
+          const tomRegex = doc.body.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').match(/Tom:\s*([A-G][#b]?m?)/i);
           if (tomRegex && tomRegex[1]) tomStr = tomRegex[1].trim();
 
           const preEl = doc.querySelector('pre');
           if (preEl) {
               preEl.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature').forEach(el => el.remove());
               
-              let lines = preEl.textContent.replace(/\r/g, '').split('\n');
+              let lines = preEl.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/\r/g, '').split('\n');
               let newLines = [];
               let inIntroBlock = false;
               let introChords = [];
