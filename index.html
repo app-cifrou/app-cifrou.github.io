@@ -196,7 +196,7 @@
   .a4-content-area { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
   .doc-title { font-size: 22pt !important; font-weight: 800; text-transform: uppercase; line-height: 1.1; color: #000; word-wrap: break-word; white-space: normal; margin: 0; }
   
-  /* CORREÇÃO DEFINITIVA DO ALINHAMENTO DO TOM E ARTISTA NA MESMA LINHA SEM SOBREPOR */
+  /* CORREÇÃO DO ESPAÇAMENTO ARTISTA/TOM */
   .meta-left { font-size: 13pt !important; font-weight: 600; color: #475569; line-height: 1.4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; row-gap: 4px; }
   
   .badge { color: white !important; text-decoration: none; font-size: 9pt; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block !important; }
@@ -208,7 +208,16 @@
   hr.divider { border: 0; border-top: 2px solid #000000; margin: 10px 0 20px 0; }
   .split-block { display: flex; width: 100%; gap: 15px; margin-bottom: 2px; }
   .split-col { flex: 1; }
-  .split-col-divider { width: 1px; border-left: 2px solid #000000; margin: 0 15px; flex-shrink: 0; }
+  
+  /* CORREÇÃO DA LINHA PRETA DAS COLUNAS (SPLIT-COL-DIVIDER) */
+  .split-col-divider { 
+      width: 1px; 
+      border-left: 2px solid #000000; 
+      margin: 0 15px; 
+      flex-shrink: 0; 
+      height: auto; /* Garante que a altura acompanhe o flex pai */
+      align-self: stretch; /* Estica a linha preta até o final da coluna mais alta */
+  }
 
   /* Trava de colunas exclusiva para PC (não afeta Mobile) */
   html.is-desktop .split-col {
@@ -977,11 +986,16 @@
 
   function duplicateSong() {
     if (songs.length === 0) return;
-    saveCurrentSong(); 
+    saveCurrentSong(); // Garante que qualquer texto não salvo seja guardado antes da cópia
+    
     const songToCopy = songs[currentIndex];
-    const newSong = JSON.parse(JSON.stringify(songToCopy)); 
+    const newSong = JSON.parse(JSON.stringify(songToCopy)); // Deep copy completa
     newSong.title = newSong.title + " (Cópia)"; 
+    
+    // Insere exatamente abaixo da música atual
     songs.splice(currentIndex + 1, 0, newSong);
+    
+    // Seleciona a cópia criada
     selectSong(currentIndex + 1);
     autoSaveToMemory();
   }
@@ -1250,13 +1264,11 @@
       return line.replace(wordExtractor, (match, word, spaces) => {
           if (!isChord(word)) return match; 
           let newChord = transposeSingleChord(word, steps);
-          
           let diff = newChord.length - word.length;
           let newSpaces = spaces;
           
-          // O SEGREDO DO ESPAÇO PRESERVADO:
-          // A lógica de alinhar a letra debaixo da cifra mudou: nunca apaga o último espaço!
           if (diff > 0 && newSpaces.length > 0) {
+              // Garante que pelo menos 1 espaço em branco sobreviva para que a cifra não grude
               let spacesToRemove = Math.min(diff, newSpaces.length - 1);
               newSpaces = newSpaces.slice(spacesToRemove);
           } else if (diff < 0) {
@@ -1705,9 +1717,8 @@
           let processedIntroLines = [];
           
           for (let i = 0; i < cleanIntroLines.length; i++) {
-              let cleanIntro = cleanIntroLines[i].replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '');
-              
-              if (cleanIntro.trim() === '') continue; // Ignora se o usuário der um "Enter" em branco sem querer
+              let cleanIntro = cleanIntroLines[i].replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/^\[?Intro\]?:?\s*/i, '').trim();
+              if (cleanIntro === '') continue;
               
               let transposedIntro = transposeLineText(cleanIntro, song.transposeSteps || 0);
               let colorizedIntro = transposedIntro.replace(/(\S+)(\s*)/g, (match, word, spaces) => {
@@ -1717,7 +1728,7 @@
               if (processedIntroLines.length === 0) {
                   processedIntroLines.push(`[Intro] ${colorizedIntro}`);
               } else {
-                  processedIntroLines.push(`        ${colorizedIntro}`); // Injeta 8 espaços para a segunda linha alinhar perfeitamente embaixo do primeiro acorde
+                  processedIntroLines.push(`        ${colorizedIntro}`); // 8 espaços exatos de alinhamento
               }
           }
           if (processedIntroLines.length > 0) {
@@ -1845,7 +1856,7 @@
   }
 
   /* ==========================================
-     A NOVA INTELIGÊNCIA DE EXTRAÇÃO DE INTRO
+     MOTOR DE EXTRAÇÃO HACKER (PARALELO E MULTI-LAYOUT)
      ========================================== */
   async function fetchCifraWeb() {
       let urlInput = document.getElementById('i-cifra').value.trim();
@@ -1871,7 +1882,8 @@
       btn.innerHTML = "⏳ Buscando...";
       btn.disabled = true;
 
-      const googleProxy = "https://script.google.com/macros/s/AKfycbzgTEBviBJGA2H6J4nMtxOW9VVjgFpPsP6mI5TaJ1eLXQyrUBOd_txltpKB2vVIvBqV/exec?url=";
+      // Seu Script do Google Atualizado
+      const googleProxy = "https://script.google.com/macros/s/AKfycbyoa0mQfkCUR8tZEzGhb1KN2RFmbkHH6U7e4HyH1UmZzabSfBqWRe_6peUwoTFAznIF/exec?url=";
 
       let rotas = [];
       if (isCifraClub) {
@@ -1900,6 +1912,7 @@
               
               const htmlText = await response.text();
               
+              // Se a página retornada for o desafio do Cloudflare (muito curta ou contendo as flags de verificação), rejeitamos a rota
               if (!htmlText || htmlText.length < 500 || htmlText.includes('cf-browser-verification') || htmlText.includes('Just a moment...')) {
                   throw new Error("Página Vazia ou Cloudflare");
               }
@@ -1907,6 +1920,7 @@
               const parser = new DOMParser();
               const doc = parser.parseFromString(htmlText, "text/html");
               
+              // O Selector Universal (Puxa independente da plataforma)
               let containerCifra = doc.querySelector('.cifra_cnt pre, .cifra pre, pre, .cifra_cnt, .cifra, #cifra_cnt, [data-testid="cifra"], #core-cifra, .core-cifra, #cifra');
               
               if (!containerCifra || containerCifra.textContent.trim().length < 50) {
@@ -1916,6 +1930,7 @@
               return { doc, containerCifra };
           });
 
+          // Pega a primeira rota que vencer a segurança
           const { doc, containerCifra } = await Promise.any(fetchPromises);
           clearTimeout(timeoutId);
 
@@ -1938,8 +1953,10 @@
               }
           }
           
+          // Função que converte o HTML bruto (mesmo dentro de Divs e Spans) preservando as quebras de linha perfeitamente
           function extractText(el) {
               let clone = el.cloneNode(true);
+              // Limpeza profunda de divs e iframes de anúncios que se infiltram no código do Cifras.com
               clone.querySelectorAll('.sr-only, script, style, [style*="display:none"], [style*="display: none"], .tablature, .tab, .ads, .btn, .banner, iframe, ins').forEach(e => e.remove());
               clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
               clone.querySelectorAll('div, p, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
@@ -1966,6 +1983,7 @@
               let trimmedLine = line.trim();
               let upperLine = trimmedLine.toUpperCase();
               
+              // Reconhece a Intro nos três sites
               let matchIntro = trimmedLine.match(/^[\{\[\(]?(?:INTRO|INTRODUÇÃO)[\}\]\)\.\:-]?\s*(.*)/i);
               
               if (matchIntro) {
@@ -2003,8 +2021,7 @@
           document.getElementById('i-tone').value = tomStr;
           if (capoStr) document.getElementById('i-capo').value = capoStr;
           
-          // Preserva o array de intros sem juntar tudo numa linha só na extração
-          document.getElementById('i-intro').value = introChords.join('\n').replace(/ {2,}/g, ' ').trim();
+          document.getElementById('i-intro').value = introChords.join('\n').trim();
           
           songs[currentIndex].transposeSteps = 0;
           document.getElementById('i-transpose-val').innerText = '0';
@@ -2075,9 +2092,6 @@
           }
           cleanText = cleanText.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ').replace(/\[.*?\]/g, ' ');
           
-          // Mantém as quebras de linha mas limpa espaços excessivos
-          cleanText = cleanText.split(/\r?\n/).map(l => l.trim().replace(/\s{2,}/g, ' ')).filter(l => l !== '').join('\n');
-          
           const start = this.selectionStart, end = this.selectionEnd;
           this.value = this.value.substring(0, start) + cleanText + this.value.substring(end);
           this.selectionStart = this.selectionEnd = start + cleanText.length;
@@ -2089,6 +2103,7 @@
           const plain = e.clipboardData.getData('text/plain') || '';
           const html = e.clipboardData.getData('text/html') || '';
           
+          // Ampliada a detecção para todos os sites suportados
           if (html && (html.toLowerCase().includes('cifraclub') || html.toLowerCase().includes('cifras.com') || html.toLowerCase().includes('bananacifras') || plain.includes('">'))) {
               e.preventDefault(); 
               let tempDiv = document.createElement('div'); tempDiv.innerHTML = html;
@@ -2098,6 +2113,7 @@
               tempDiv.querySelectorAll('br').forEach(br => { br.parentNode.insertBefore(document.createTextNode('\n'), br); br.remove(); });
               tempDiv.querySelectorAll('div, p, pre, blockquote, article, section').forEach(block => { block.prepend('\n'); block.append('\n'); });
               
+              // BLINDAGEM MÁXIMA NO COLAR CIFRA
               let cleanText = tempDiv.textContent.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '').replace(/">/g, '').replace(/\u00A0/g, ' ');
               
               let lines = cleanText.split(/\r?\n/);
@@ -2110,7 +2126,7 @@
                   let trimmedLine = line.trim();
                   let upperLine = trimmedLine.toUpperCase();
                   
-                  let matchIntro = trimmedLine.match(/^[\{\[\(]?INTRO[\}\]\)\.\:-]?\s*(.*)/i);
+                  let matchIntro = trimmedLine.match(/^[\{\[\(]?(?:INTRO|INTRODUÇÃO)[\}\]\)\.\:-]?\s*(.*)/i);
                   
                   if (matchIntro) {
                       inIntroBlock = true;
@@ -2150,7 +2166,7 @@
               finalText = limparTablaturas(finalText);
               
               if (introChords.length > 0) {
-                  document.getElementById('i-intro').value = introChords.join('\n').replace(/ {2,}/g, ' ').trim();
+                  document.getElementById('i-intro').value = introChords.join('\n').trim();
               }
               
               const start = this.selectionStart, end = this.selectionEnd;
